@@ -5,6 +5,20 @@
 
 namespace CHIKU
 {
+	Commands VulkanEngine::m_Commands;
+
+	VulkanEngine::VulkanEngine()
+	{
+		m_Instance = VK_NULL_HANDLE;
+		m_Surface = VK_NULL_HANDLE;
+		m_PhysicalDevice = VK_NULL_HANDLE;
+
+		m_DebugMessenger = VK_NULL_HANDLE;
+		m_LogicalDevice = VK_NULL_HANDLE;
+		m_GraphicsQueue = VK_NULL_HANDLE;
+		m_PresentQueue = VK_NULL_HANDLE;
+	}
+
 	void VulkanEngine::Init()
 	{
 		m_Window.Init();
@@ -15,10 +29,13 @@ namespace CHIKU
 		CreateLogicalDevice();
 		CreateSyncObjects();
 		m_Commands.Init(m_GraphicsQueue,m_PhysicalDevice,m_LogicalDevice,m_Surface);
+		m_Swapchain.Init(m_Window.GetWindow(),m_PhysicalDevice,m_LogicalDevice,m_Surface);
 	}
 
 	void VulkanEngine::CleanUp()
 	{
+		DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
+
 		vkQueueWaitIdle(m_GraphicsQueue);
 		vkQueueWaitIdle(m_PresentQueue);
 
@@ -34,6 +51,7 @@ namespace CHIKU
 		vkDeviceWaitIdle(m_LogicalDevice);  // Or vkQueueWaitIdle(queue)
 
 		m_Commands.CleanUp();
+		m_Swapchain.CleanUp();
 		vkQueueWaitIdle(m_GraphicsQueue);
 		vkQueueWaitIdle(m_PresentQueue);
 		vkDestroyDevice(m_LogicalDevice, nullptr);
@@ -213,6 +231,16 @@ namespace CHIKU
 		else
 		{
 			return VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	}
+
+	void VulkanEngine::DestroyDebugUtilsMessengerEXT(VkInstance instance,
+		VkDebugUtilsMessengerEXT debugMessenger, 
+		const VkAllocationCallbacks* pAllocator)
+	{
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			func(instance, debugMessenger, pAllocator);
 		}
 	}
 

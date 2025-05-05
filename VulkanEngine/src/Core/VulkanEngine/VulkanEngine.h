@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Swapchain.h"
 #include "Commands.h"
 #include "Window.h"
 #include "VulkanHeader.h"
@@ -10,6 +10,11 @@ namespace CHIKU
 	class VulkanEngine
 	{
 	public:
+		static Commands m_Commands;
+
+	public:
+		VulkanEngine();
+
 		void Init();
 		void CleanUp();
 
@@ -27,7 +32,15 @@ namespace CHIKU
 		void CreateSurface();
 		void CreatePhysicalDevice();
 
-		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, 
+			const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
+			const VkAllocationCallbacks* pAllocator, 
+			VkDebugUtilsMessengerEXT* pDebugMessenger);
+
+		void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+			VkDebugUtilsMessengerEXT debugMessenger,
+			const VkAllocationCallbacks* pAllocator);
+
 		void SetupDebugMessenger();
 		void CreateLogicalDevice();
 
@@ -48,7 +61,9 @@ namespace CHIKU
 		VkQueue m_PresentQueue;
 
 		Window m_Window;
-		Commands m_Commands;
+
+		Swapchain m_Swapchain;
+		uint32_t m_CurrentFrame = 0;
 
 		const std::vector<const char*> m_ValidationLayers = {
 			"VK_LAYER_KHRONOS_validation"

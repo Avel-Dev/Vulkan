@@ -8,6 +8,7 @@ include_directories("vendor/glm")
 include_directories("vendor/stb_image")
 include_directories("vendor/tinyobjloader")
 include_directories("src/")
+include_directories("src/core/")
 
 include_directories($ENV{VULKAN_SDK}/include)
 link_directories($ENV{VULKAN_SDK}/lib)

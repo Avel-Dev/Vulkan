@@ -13,5 +13,6 @@ namespace CHIKU
 
 	void Application::CleanUp()
 	{
+		m_Engine.CleanUp();
 	}
 }
