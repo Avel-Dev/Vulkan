@@ -2,6 +2,7 @@
 #include "EngineUtility.h"
 
 #include <iostream>
+#include <cstring>
 
 namespace CHIKU
 {
