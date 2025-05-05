@@ -13,6 +13,32 @@ namespace CHIKU
 		CreateSurface();
 		CreatePhysicalDevice();
 		CreateLogicalDevice();
+		CreateSyncObjects();
+		m_Commands.Init(m_GraphicsQueue,m_PhysicalDevice,m_LogicalDevice,m_Surface);
+	}
+
+	void VulkanEngine::CleanUp()
+	{
+		vkQueueWaitIdle(m_GraphicsQueue);
+		vkQueueWaitIdle(m_PresentQueue);
+
+		for (int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++)
+		{
+			vkDestroySemaphore(m_LogicalDevice, m_ImageAvailableSemaphore[i], nullptr);
+			vkDestroySemaphore(m_LogicalDevice, m_RenderFinishedSemaphore[i], nullptr);
+
+			vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFence[i], VK_TRUE, UINT64_MAX);
+			vkDestroyFence(m_LogicalDevice, m_InFlightFence[i], nullptr);
+		}
+		
+		vkDeviceWaitIdle(m_LogicalDevice);  // Or vkQueueWaitIdle(queue)
+
+		m_Commands.CleanUp();
+		vkQueueWaitIdle(m_GraphicsQueue);
+		vkQueueWaitIdle(m_PresentQueue);
+		vkDestroyDevice(m_LogicalDevice, nullptr);
+		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
+		vkDestroyInstance(m_Instance, nullptr);
 	}
 
 	void VulkanEngine::GetRequiredExtensions()
@@ -248,5 +274,29 @@ namespace CHIKU
 
 		vkGetDeviceQueue(m_LogicalDevice, indices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
 		vkGetDeviceQueue(m_LogicalDevice, indices.PresentFamily.value(), 0, &m_PresentQueue);
+	}
+
+	void VulkanEngine::CreateSyncObjects()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		VkFenceCreateInfo fenceInfo{};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		m_ImageAvailableSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+		m_RenderFinishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+		m_InFlightFence.resize(MAX_FRAMES_IN_FLIGHT);
+
+		for (int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++)
+		{
+			if (vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphore[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(m_LogicalDevice, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphore[i]) != VK_SUCCESS ||
+				vkCreateFence(m_LogicalDevice, &fenceInfo, nullptr, &m_InFlightFence[i]) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create semaphores!");
+			}
+		}
 	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Commands.h"
 #include "Window.h"
 #include "VulkanHeader.h"
 #include <optional>
@@ -10,6 +11,7 @@ namespace CHIKU
 	{
 	public:
 		void Init();
+		void CleanUp();
 
 	private:
 		void GetRequiredExtensions();
@@ -29,9 +31,12 @@ namespace CHIKU
 		void SetupDebugMessenger();
 		void CreateLogicalDevice();
 
+		void CreateSyncObjects();
 
 	private:
-		Window m_Window;
+		std::vector<VkSemaphore> m_ImageAvailableSemaphore;
+		std::vector<VkSemaphore> m_RenderFinishedSemaphore;
+		std::vector<VkFence> m_InFlightFence;
 
 		VkInstance m_Instance;
 		VkSurfaceKHR m_Surface;
@@ -41,6 +46,9 @@ namespace CHIKU
 		VkDevice m_LogicalDevice;
 		VkQueue m_GraphicsQueue;
 		VkQueue m_PresentQueue;
+
+		Window m_Window;
+		Commands m_Commands;
 
 		const std::vector<const char*> m_ValidationLayers = {
 			"VK_LAYER_KHRONOS_validation"
