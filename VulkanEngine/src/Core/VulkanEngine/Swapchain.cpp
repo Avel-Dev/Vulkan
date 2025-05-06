@@ -6,7 +6,7 @@
 
 namespace CHIKU
 {
-    void Swapchain::Init(GLFWwindow* window,VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSurfaceKHR surface)
+    void Swapchain::Init(GLFWwindow* window, const VkPhysicalDevice& physicalDevice, const VkDevice& logicalDevice, const VkSurfaceKHR& surface)
     {
         m_LogicalDevice = logicalDevice;
         CreateSwapchain(window,physicalDevice,surface);
@@ -22,7 +22,7 @@ namespace CHIKU
         vkDestroyImage(m_LogicalDevice, m_DepthImage, nullptr);
         vkFreeMemory(m_LogicalDevice, m_DepthImageMemory, nullptr);
 
-        for (auto framebuffer : m_SwapChainFramebuffers)
+        for (auto framebuffer : SwapChainFramebuffers)
         {
             vkDestroyFramebuffer(m_LogicalDevice, framebuffer, nullptr);
         }
@@ -36,7 +36,7 @@ namespace CHIKU
         vkDestroyRenderPass(m_LogicalDevice, Swapchain::m_RenderPass, nullptr);
     }
 
-    void Swapchain::RecreateSwapchain(GLFWwindow* window, VkPhysicalDevice physicalDevice,VkSurfaceKHR surface)
+    void Swapchain::RecreateSwapchain(GLFWwindow* window,const VkPhysicalDevice& physicalDevice,const VkSurfaceKHR& surface)
     {
         int width = 0, height = 0;
         glfwGetFramebufferSize(window, &width, &height);
@@ -55,7 +55,7 @@ namespace CHIKU
         CreateFrameBuffers();
     }
 
-    VkFormat Swapchain::FindDepthFormat(VkPhysicalDevice physicalDevice)
+    VkFormat Swapchain::FindDepthFormat(const VkPhysicalDevice&physicalDevice)
     {
         return  Utils::FindSupportedFormat(physicalDevice,
             { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
@@ -64,7 +64,7 @@ namespace CHIKU
         );
     }
 
-    void Swapchain::CreateDepthResources(VkPhysicalDevice physicalDevice)
+    void Swapchain::CreateDepthResources(const VkPhysicalDevice&physicalDevice)
     {
         VkFormat depthFormat = FindDepthFormat(physicalDevice);
 
@@ -79,7 +79,36 @@ namespace CHIKU
         ImageUtils::TransitionImageLayout(m_DepthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
-    void Swapchain::CreateRenderpass(VkPhysicalDevice physicalDevice)
+    VkResult Swapchain::AcquireNextImageInSwapchain(const VkDevice& device, const VkSemaphore& semaphore, uint32_t* pImageIndex)
+    {
+        return vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, pImageIndex);
+    }
+
+    void Swapchain::BeginRenderPass(const VkCommandBuffer& commandBuffer,uint32_t imageIndex)
+    {
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_RenderPass;
+        renderPassInfo.framebuffer = SwapChainFramebuffers[imageIndex];
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent = m_SwapChainExtent;
+
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[1].depthStencil = { 1.0f, 0 };
+
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    void Swapchain::EndRenderPass(const VkCommandBuffer& commandBuffer)
+    {
+        vkCmdEndRenderPass(commandBuffer);
+    }
+
+    void Swapchain::CreateRenderpass(const VkPhysicalDevice&physicalDevice)
     {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = m_SwapChainImageFormat;
@@ -139,7 +168,7 @@ namespace CHIKU
         }
     }
 
-    void Swapchain::CreateSwapchain(GLFWwindow* window,VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+    void Swapchain::CreateSwapchain(GLFWwindow* window,const VkPhysicalDevice&physicalDevice,const VkSurfaceKHR& surface)
     {
         SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(physicalDevice,surface);
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
@@ -208,7 +237,7 @@ namespace CHIKU
 
     void Swapchain::CreateFrameBuffers()
     {
-        m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
+        SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
 
         for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
         {
@@ -227,14 +256,14 @@ namespace CHIKU
             framebufferInfo.height = m_SwapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(m_LogicalDevice, &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS)
+            if (vkCreateFramebuffer(m_LogicalDevice, &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to create framebuffer!");
             }
         }
     }
 
-    SwapChainSupportDetails Swapchain::QuerySwapChainSupport(VkPhysicalDevice device,VkSurfaceKHR surface)
+    SwapChainSupportDetails Swapchain::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
     {
         SwapChainSupportDetails details;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capabilities);

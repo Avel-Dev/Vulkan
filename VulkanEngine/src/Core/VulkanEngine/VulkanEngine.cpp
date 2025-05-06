@@ -6,10 +6,20 @@
 
 namespace CHIKU
 {
-	Commands VulkanEngine::m_Commands;
+	VulkanEngine* VulkanEngine::s_Instance = nullptr;
 
 	VulkanEngine::VulkanEngine()
 	{
+		if (s_Instance == nullptr)
+		{
+			s_Instance = this;
+		}
+		else
+		{
+			throw std::runtime_error("Multiple instance of Vulkan Engine");
+		}
+
+		m_Window = nullptr;
 		m_Instance = VK_NULL_HANDLE;
 		m_Surface = VK_NULL_HANDLE;
 		m_PhysicalDevice = VK_NULL_HANDLE;
@@ -20,17 +30,23 @@ namespace CHIKU
 		m_PresentQueue = VK_NULL_HANDLE;
 	}
 
-	void VulkanEngine::Init()
+	void VulkanEngine::Init(GLFWwindow* window)
 	{
-		m_Window.Init();
+		m_Window = window;
+		if (m_Window == nullptr)
+		{
+			throw std::runtime_error("GLFWwindow is required for Vulkan Engine");
+		}
+
 		GetRequiredExtensions();
 		CreateInstance();
 		CreateSurface();
 		CreatePhysicalDevice();
 		CreateLogicalDevice();
 		CreateSyncObjects();
-		m_Commands.Init(m_GraphicsQueue,m_PhysicalDevice,m_LogicalDevice,m_Surface);
-		m_Swapchain.Init(m_Window.GetWindow(),m_PhysicalDevice,m_LogicalDevice,m_Surface);
+
+		m_Commands.Init(m_GraphicsQueue,m_LogicalDevice, m_PhysicalDevice,m_Surface);
+		m_Swapchain.Init(m_Window,m_PhysicalDevice,m_LogicalDevice,m_Surface);
 	}
 
 	void VulkanEngine::CleanUp()
@@ -58,6 +74,88 @@ namespace CHIKU
 		vkDestroyDevice(m_LogicalDevice, nullptr);
 		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
 		vkDestroyInstance(m_Instance, nullptr);
+	}
+
+	void VulkanEngine::BeginFrame()
+	{
+		vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFence[m_CurrentFrame], VK_TRUE, UINT64_MAX);
+
+		VkResult result = m_Swapchain.AcquireNextImageInSwapchain(m_LogicalDevice, m_ImageAvailableSemaphore[m_CurrentFrame],&m_ImageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) 
+		{
+			m_Swapchain.RecreateSwapchain(m_Window,m_PhysicalDevice,m_Surface);
+		}
+		else if (result != VK_SUCCESS) 
+		{
+			throw std::runtime_error("failed to present swap chain image!");
+		}
+		
+		vkResetCommandBuffer(m_Commands.GetCommandBuffer(m_CurrentFrame), 0);
+		BeginRecordingCommands(m_Commands.GetCommandBuffer(m_CurrentFrame));
+	}
+
+	void VulkanEngine::EndFrame()
+	{
+		EndRecordingCommands(m_Commands.GetCommandBuffer(m_CurrentFrame));
+		VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphore[m_CurrentFrame] };
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphore[m_CurrentFrame] };
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &m_Commands.GetCommandBuffer(m_CurrentFrame);
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		vkResetFences(m_LogicalDevice, 1, &m_InFlightFence[m_CurrentFrame]);
+		if (vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFence[m_CurrentFrame]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+
+		VkSwapchainKHR swapChains[] = { m_Swapchain.GetSwapchain() };
+		VkPresentInfoKHR presentInfo{};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &m_ImageIndex;
+		presentInfo.pResults = nullptr; // Optional
+
+		vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+		m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	}
+
+	void VulkanEngine::BeginRecordingCommands(const VkCommandBuffer& commandBuffer)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = 0; // Optional
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to begin recording command buffer!");
+		}
+
+		m_Swapchain.BeginRenderPass(commandBuffer ,m_ImageIndex);
+	}
+
+	void VulkanEngine::EndRecordingCommands(const VkCommandBuffer& commandBuffer)
+	{
+		m_Swapchain.EndRenderPass(commandBuffer);
+
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to record command buffer!");
+		}
 	}
 
 	void VulkanEngine::GetRequiredExtensions()
@@ -161,7 +259,7 @@ namespace CHIKU
 
 	void VulkanEngine::CreateSurface()
 	{
-		if (glfwCreateWindowSurface(m_Instance, m_Window.GetWindow(), nullptr, &m_Surface) != VK_SUCCESS)
+		if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create window surface!");
 		}

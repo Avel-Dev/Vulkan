@@ -7,7 +7,10 @@ namespace CHIKU
 	{
 	public:
 		void Init();
-		GLFWwindow* GetWindow() { return m_Window; }
+
+		inline GLFWwindow* GetWindow() { return m_Window; }
+		inline bool WindowShouldClose() const { return glfwWindowShouldClose(m_Window); }
+		inline void WindowPoolEvent() const { glfwPollEvents(); }
 
 	private:
 		void InitWindow();

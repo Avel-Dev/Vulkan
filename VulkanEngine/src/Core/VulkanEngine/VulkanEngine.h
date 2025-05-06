@@ -10,14 +10,20 @@ namespace CHIKU
 	class VulkanEngine
 	{
 	public:
-		static Commands m_Commands;
-
+		static VulkanEngine* s_Instance;
 	public:
 		VulkanEngine();
 
-		void Init();
+		void Init(GLFWwindow* window);
 		void CleanUp();
+		void BeginFrame();
+		void EndFrame();
 
+		void BeginRecordingCommands(const VkCommandBuffer& commandBuffer);
+		void EndRecordingCommands(const VkCommandBuffer& commandBuffer);
+
+		VkCommandBuffer BeginSingleTimeCommands() { return m_Commands.BeginSingleTimeCommands(); }
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) { m_Commands.EndSingleTimeCommands(commandBuffer); }
 	private:
 		void GetRequiredExtensions();
 
@@ -43,7 +49,6 @@ namespace CHIKU
 
 		void SetupDebugMessenger();
 		void CreateLogicalDevice();
-
 		void CreateSyncObjects();
 
 	private:
@@ -54,15 +59,17 @@ namespace CHIKU
 		VkInstance m_Instance;
 		VkSurfaceKHR m_Surface;
 		VkPhysicalDevice m_PhysicalDevice;
+		Commands m_Commands;
 
 		VkDebugUtilsMessengerEXT m_DebugMessenger;
 		VkDevice m_LogicalDevice;
 		VkQueue m_GraphicsQueue;
 		VkQueue m_PresentQueue;
 
-		Window m_Window;
+		GLFWwindow* m_Window;
 
 		Swapchain m_Swapchain;
+		uint32_t m_ImageIndex = 0;
 		uint32_t m_CurrentFrame = 0;
 
 		const std::vector<const char*> m_ValidationLayers = {

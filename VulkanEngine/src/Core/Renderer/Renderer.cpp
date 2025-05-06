@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "VulkanEngine/VulkanEngine.h"
 
 namespace CHIKU
 {
@@ -12,10 +13,12 @@ namespace CHIKU
 
 	void Renderer::BeginFrame()
 	{
+		VulkanEngine::s_Instance->BeginFrame();
 	}
 
 	void Renderer::EndFrame()
 	{
+		VulkanEngine::s_Instance->EndFrame();
 	}
 
 	void Renderer::BeginScene()

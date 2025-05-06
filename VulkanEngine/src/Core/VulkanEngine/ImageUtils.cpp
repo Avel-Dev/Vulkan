@@ -78,7 +78,7 @@ namespace CHIKU
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 		{
-			VkCommandBuffer commandBuffer = VulkanEngine::m_Commands.BeginSingleTimeCommands();
+			VkCommandBuffer commandBuffer = VulkanEngine::s_Instance->BeginSingleTimeCommands();
 
 			VkImageMemoryBarrier barrier{};
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -143,7 +143,7 @@ namespace CHIKU
 				1, &barrier
 			);
 
-			VulkanEngine::m_Commands.EndSingleTimeCommands(commandBuffer);
+			VulkanEngine::s_Instance->EndSingleTimeCommands(commandBuffer);
 		}
 
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)

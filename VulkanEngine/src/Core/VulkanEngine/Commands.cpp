@@ -3,7 +3,7 @@
 
 namespace CHIKU
 {
-	void Commands::Init(VkQueue graphicsQueue, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
+	void Commands::Init(VkQueue graphicsQueue, VkDevice device, const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface)
 	{
 		m_GraphicsQueue = graphicsQueue;
 		m_LogicalDevice = device;
@@ -66,7 +66,7 @@ namespace CHIKU
 		}
 	}
 
-	void Commands::CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+	void Commands::CreateCommandPool(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface)
 	{
 		Utils::QueueFamilyIndices queueFamilyIndices = Utils::FindQueueFamilies(physicalDevice,surface);
 
