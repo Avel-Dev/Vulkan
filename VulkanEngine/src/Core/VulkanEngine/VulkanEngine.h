@@ -19,6 +19,9 @@ namespace CHIKU
 		void BeginFrame();
 		void EndFrame();
 
+		static const VkPhysicalDevice& GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
+		static const VkDevice& GetDevice() { return s_Instance->m_LogicalDevice; }
+
 		void BeginRecordingCommands(const VkCommandBuffer& commandBuffer);
 		void EndRecordingCommands(const VkCommandBuffer& commandBuffer);
 
