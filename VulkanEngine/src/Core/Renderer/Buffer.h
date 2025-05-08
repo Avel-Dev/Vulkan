@@ -69,8 +69,9 @@ namespace CHIKU
 
             void SetBinding(uint32_t binding) { m_Binding = binding; }
             void CreateVertexBuffer();
-            void SetData(std::vector<void*> data);
+            void SetData(const std::vector<uint8_t>& data);
 
+            inline VertexBufferLayout GetLayout() { return m_Layout; }
             inline VkVertexInputBindingDescription GetBindingDescription() const { return m_BindingDescription; }
             inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() const { return m_AttributeDescriptions; }
             void Bind(VkCommandBuffer commandBuffer);

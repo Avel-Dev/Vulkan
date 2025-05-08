@@ -14,8 +14,8 @@ namespace CHIKU
 		void CleanUp();
 
 	private:
-		Renderer m_Renderer;
 		Window m_Window;
 		VulkanEngine m_Engine;
+		Renderer m_Renderer;
 	};
 }

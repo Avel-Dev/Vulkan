@@ -25,7 +25,7 @@ add_executable(VulkanEngine
 )
 
 message("Source :" ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_definitions(VulkanEngine PRIVATE CHIKU_SRC_PATH=${CMAKE_CURRENT_SOURCE_DIR}/src/)
+target_compile_definitions(VulkanEngine PRIVATE CHIKU_SRC_PATH=${CMAKE_CURRENT_SOURCE_DIR}/)
 
 if(WIN32)
     set(VULKAN_LIB vulkan-1)

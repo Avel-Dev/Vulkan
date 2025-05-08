@@ -9,11 +9,13 @@ namespace CHIKU
         VertexBuffer::VertexBuffer(VertexLayoutPreset preset)
         {
             m_Layout = Utils::CreateVertexBufferLayout(preset);
+            Utils::FinalizeLayout(m_Layout);
             m_VertexBuffer = VK_NULL_HANDLE;
             m_VertexBufferMemory = VK_NULL_HANDLE;
 
             PrepareBindingDescription();
             PrepareAttributeDescriptions();
+            CreateVertexBuffer();
         }
 
         void VertexBuffer::CreateVertexBuffer()
@@ -26,7 +28,7 @@ namespace CHIKU
                 m_VertexBuffer, m_VertexBufferMemory);
         }
 
-        void VertexBuffer::SetData(std::vector<void*> vertices)
+        void VertexBuffer::SetData(const std::vector<uint8_t>& vertices)
         {
             VkDeviceSize bufferSize = m_Layout.Stride;
 

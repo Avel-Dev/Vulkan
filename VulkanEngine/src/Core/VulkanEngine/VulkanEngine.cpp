@@ -90,9 +90,10 @@ namespace CHIKU
 		{
 			throw std::runtime_error("failed to present swap chain image!");
 		}
-		
-		vkResetCommandBuffer(m_Commands.GetCommandBuffer(m_CurrentFrame), 0);
-		BeginRecordingCommands(m_Commands.GetCommandBuffer(m_CurrentFrame));
+		VkCommandBuffer commandBuffer = m_Commands.GetCommandBuffer(m_CurrentFrame);
+
+		vkResetCommandBuffer(commandBuffer, 0);
+		BeginRecordingCommands(commandBuffer);
 	}
 
 	void VulkanEngine::EndFrame()
@@ -145,7 +146,7 @@ namespace CHIKU
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		m_Swapchain.BeginRenderPass(commandBuffer ,m_ImageIndex);
+		m_Swapchain.BeginRenderPass(commandBuffer, m_ImageIndex);
 	}
 
 	void VulkanEngine::EndRecordingCommands(const VkCommandBuffer& commandBuffer)

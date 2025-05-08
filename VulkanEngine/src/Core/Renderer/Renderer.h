@@ -1,12 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "Model.h"
 
 namespace CHIKU
 {
-	class Material;
-	class Mesh;
-	class Model;
-
 	class Renderer
 	{
 	public:
@@ -25,5 +22,8 @@ namespace CHIKU
 
 		void BeginPostProcessing();
 		void EndPostProcessing();
+
+	private:
+		Model* m_Model;
 	};
 }

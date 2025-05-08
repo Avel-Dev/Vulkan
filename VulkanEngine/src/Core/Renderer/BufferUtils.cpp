@@ -151,6 +151,8 @@ namespace CHIKU
                 throw std::runtime_error("Unsupported Vertex Buffer Layout");
                 break;
             }
+
+            return layout;
         }
 
         VkFormat MapVertexAttributeTypeToVkFormat(Buffer::VertexAttributeType type) 
