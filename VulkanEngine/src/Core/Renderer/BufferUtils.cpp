@@ -8,13 +8,13 @@ namespace CHIKU
     {
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
         {
-            auto commandBuffer = VulkanEngine::s_Instance->BeginSingleTimeCommands();
+            auto commandBuffer = VulkanEngine::BeginRecordingSingleTimeCommands();
             VkBufferCopy copyRegion{};
             copyRegion.srcOffset = 0; // Optional
             copyRegion.dstOffset = 0; // Optional
             copyRegion.size = size;
             vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-            VulkanEngine::s_Instance->EndSingleTimeCommands(commandBuffer);
+            VulkanEngine::EndRecordingSingleTimeCommands(commandBuffer);
         }
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
         {
@@ -98,48 +98,48 @@ namespace CHIKU
             {
             case Buffer::VertexLayoutPreset::StaticMesh:
                 layout.VertexElements = {
-                    {"inPosition", Buffer::VertexAttributeType::Vec3},
-                    {"inNormal",   Buffer::VertexAttributeType::Vec3},
-                    {"inTexcoord", Buffer::VertexAttributeType::Vec2}
+                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_NORMAL,   Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_TEXCOORD, Buffer::VertexAttributeType::Vec2}
                 };
                 break;
 
             case Buffer::VertexLayoutPreset::SkinnedMesh:
                 layout.VertexElements = {
-                    {"inPosition",  Buffer::VertexAttributeType::Vec3},
-                    {"inNormal",    Buffer::VertexAttributeType::Vec3},
-                    {"inTexcoord",  Buffer::VertexAttributeType::Vec2},
-                    {"inBoneIDS",  Buffer::VertexAttributeType::UByte4},
-                    {"inWeights",   Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION,  Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_NORMAL,    Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_TEXCOORD,  Buffer::VertexAttributeType::Vec2},
+                    {VERTEX_FIELD_BONEIDS,  Buffer::VertexAttributeType::UByte4},
+                    {VERTEX_FIELD_WEIGHTS,   Buffer::VertexAttributeType::Vec4}
                 };
                 break;
 
             case Buffer::VertexLayoutPreset::LitMesh:
                 layout.VertexElements = {
-                    {"inPosition", Buffer::VertexAttributeType::Vec3},
-                    {"inNormal",   Buffer::VertexAttributeType::Vec3},
-                    {"inTexcoord", Buffer::VertexAttributeType::Vec2},
-                    {"inTangent",  Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_NORMAL,   Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_TEXCOORD, Buffer::VertexAttributeType::Vec2},
+                    {VERTEX_FIELD_TANGENT,  Buffer::VertexAttributeType::Vec4}
                 };
                 break;
 
             case Buffer::VertexLayoutPreset::ColoredMesh:
                 layout.VertexElements = {
-                    {"inPosition", Buffer::VertexAttributeType::Vec3},
-                    {"inColor",    Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_COLOR,    Buffer::VertexAttributeType::Vec4}
                 };
                 break;
 
             case Buffer::VertexLayoutPreset::DebugLine:
                 layout.VertexElements = {
-                    {"inPosition", Buffer::VertexAttributeType::Vec3},
-                    {"inColor",    Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_COLOR,    Buffer::VertexAttributeType::Vec4}
                 };
                 break;
 
             case Buffer::VertexLayoutPreset::PointCloud:
                 layout.VertexElements = {
-                    {"inPosition", Buffer::VertexAttributeType::Vec3}
+                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3}
                 };
                 break;
 
@@ -151,7 +151,7 @@ namespace CHIKU
                 throw std::runtime_error("Unsupported Vertex Buffer Layout");
                 break;
             }
-
+            Utils::FinalizeLayout(layout);
             return layout;
         }
 

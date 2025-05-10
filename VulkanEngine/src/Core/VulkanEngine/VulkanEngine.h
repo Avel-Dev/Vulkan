@@ -21,13 +21,14 @@ namespace CHIKU
 
 		static const VkPhysicalDevice& GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
 		static const VkDevice& GetDevice() { return s_Instance->m_LogicalDevice; }
+		static const VkCommandBuffer BeginRecordingSingleTimeCommands() { return s_Instance->BeginSingleTimeCommands(); }
+		static const void EndRecordingSingleTimeCommands(VkCommandBuffer commandBuffer) { return s_Instance->EndSingleTimeCommands(commandBuffer); }
 
+	private:
 		void BeginRecordingCommands(const VkCommandBuffer& commandBuffer);
 		void EndRecordingCommands(const VkCommandBuffer& commandBuffer);
-
 		VkCommandBuffer BeginSingleTimeCommands() { return m_Commands.BeginSingleTimeCommands(); }
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) { m_Commands.EndSingleTimeCommands(commandBuffer); }
-	private:
 		void GetRequiredExtensions();
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

@@ -8,7 +8,10 @@ namespace CHIKU
 	{
 	public:
 		Mesh();
+		~Mesh();
+		void CleanUp();
 		void LoadMesh(const tinyobj::attrib_t& attrib,const std::vector<tinyobj::shape_t>& shapes);
+
 	private:
 		Buffer::VertexBuffer m_VertexBuffer;
 

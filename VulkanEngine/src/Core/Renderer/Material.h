@@ -1,55 +1,90 @@
 #pragma once
 #include "VulkanHeader.h"
+#include "Texture.h"
+#include <tiny_obj_loader.h>
+#include <variant>
 
 namespace CHIKU
 {
     enum class MaterialLayoutPreset
     {
         None = 0,
-
-        // Only model matrix (for basic unlit or debug materials)
-        ModelOnly,
-
-        // Model + ViewProjection matrix (common for static simple shaders)
         MVP,
-
-        // Model + View + Projection as separate (more flexible binding)
+        MVPUnlitTextured,
+        MVPStandard,
         ModelViewProjection,
-
-        // PBR Material with albedo, metallic, roughness, normal map
-        PBR_Standard,
-
-        // Unlit textured material
-        UnlitTextured,
-
-        // Skybox (usually only ViewProjection)
-        Skybox,
-
-        // Post-processing effect (fullscreen, usually no model matrix)
-        PostProcess,
-
-        // Custom user-defined layout
-        Custom
     };
 
-    struct DescriptorBinding 
+    enum class UniformPlainDataType
     {
-        uint32_t binding;
-        VkDescriptorType type;
-        VkShaderStageFlags stageFlags;
+        Vec2,           // 2 x 32-bit float (e.g., UVs)
+        Vec3,           // 3 x 32-bit float (e.g., position, normal)
+        Vec4,           // 4 x 32-bit float (e.g., color, tangent, weights)
+
+        IVec2,          // 2 x int
+        IVec3,          // 3 x int
+        IVec4,          // 4 x int (e.g., bone indices)
+
+        Mat3,
+        Mat4,
+        Sampler2D
     };
 
-    using DescriptorLayout = std::vector<DescriptorBinding>;
+    enum class UniformOpaqueDataType
+    {
+        Sampler2D,
+        Sampler3D,
+        SamplerCube
+    };
 
-    DescriptorLayout GetDescriptorLayoutForPreset(MaterialLayoutPreset preset);
-    VkDescriptorSetLayout CreateDescriptorSetLayoutFromPreset(VkDevice device, MaterialLayoutPreset preset);
+    struct UniformBufferAttribute
+    {
+        std::string AttributeName;
+        std::variant<UniformPlainDataType, UniformOpaqueDataType> AttributeType;
+        VkDescriptorType DescriptorType;
+        VkShaderStageFlags ShaderStageFlag;
+
+        UniformBufferAttribute(const std::string& name, UniformPlainDataType plain, VkDescriptorType descriptorType, VkShaderStageFlags stage)
+            : AttributeName(name), AttributeType(plain), DescriptorType(descriptorType), ShaderStageFlag(stage) {
+        }
+
+        UniformBufferAttribute(const std::string& name, UniformOpaqueDataType opaque, VkDescriptorType descriptorType, VkShaderStageFlags stage)
+            : AttributeName(name), AttributeType(opaque), DescriptorType(descriptorType), ShaderStageFlag(stage) {
+        }
+    };
+
+    struct UniformBufferLayout
+    {
+        std::vector<UniformBufferAttribute> BufferAttributes;
+        size_t size;
+    };
 
 	class Material
 	{
     public:
-        void SetLayout(MaterialLayoutPreset preset);
+        ~Material();
+        void CreateMaterial(MaterialLayoutPreset preset);
+        void Bind(VkCommandBuffer commandBuffer);
+        void CleanUp();
 
     private:
-        VkDescriptorSetLayout m_Layout;
+        void CreateUniformBuffer();
+
+        static size_t GetAttributeSize(const UniformPlainDataType& attributeType);
+        static UniformBufferLayout GetDescriptorLayoutForPreset(const MaterialLayoutPreset& preset);
+        void CreateDescriptorSetLayout();
+        void CreateDescriptorPool();
+        void CreateDescriptorSets();
+
+    private:
+        UniformBufferLayout m_UniformBufferLayout; //
+        VkDescriptorSetLayout m_Layout; //
+        VkDescriptorPool m_DescriptorPool; //
+
+        std::vector<Texture> m_Textures;
+        std::vector<VkDescriptorSet> m_DescriptorSets;
+        std::vector<VkBuffer> m_UniformBuffers;
+        std::vector<VkDeviceMemory> m_UniformBuffersMemory;
+        std::vector<void*> m_UniformBuffersMapped;
 	};
 }

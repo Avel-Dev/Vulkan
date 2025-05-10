@@ -8,6 +8,14 @@ namespace CHIKU
 {
 	namespace Buffer
 	{
+#define VERTEX_FIELD_POSITION "inPosition"
+#define VERTEX_FIELD_NORMAL "inNormal"
+#define VERTEX_FIELD_TEXCOORD "inTexcoord"
+#define VERTEX_FIELD_BONEIDS "inBoneIDS"
+#define VERTEX_FIELD_WEIGHTS "inWeights"
+#define VERTEX_FIELD_TANGENT "inTangent"
+#define VERTEX_FIELD_COLOR "inColor"
+
         enum class VertexAttributeType 
         {
             Float,          // 32-bit float

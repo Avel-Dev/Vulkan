@@ -28,6 +28,7 @@ namespace CHIKU
 
 	void Application::CleanUp()
 	{
+		m_Renderer.Shutdown();
 		m_Engine.CleanUp();
 	}
 }

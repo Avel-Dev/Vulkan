@@ -11,6 +11,7 @@ namespace CHIKU
 		
 	void Renderer::Shutdown()
 	{
+		delete(m_Model);
 	}
 
 	void Renderer::BeginFrame()

@@ -9,7 +9,6 @@ namespace CHIKU
         VertexBuffer::VertexBuffer(VertexLayoutPreset preset)
         {
             m_Layout = Utils::CreateVertexBufferLayout(preset);
-            Utils::FinalizeLayout(m_Layout);
             m_VertexBuffer = VK_NULL_HANDLE;
             m_VertexBufferMemory = VK_NULL_HANDLE;
 
@@ -58,8 +57,15 @@ namespace CHIKU
 
         void VertexBuffer::CleanUp()
         {
-            vkDestroyBuffer(VulkanEngine::GetDevice(), m_VertexBuffer, nullptr);
-            vkFreeMemory(VulkanEngine::GetDevice(),m_VertexBufferMemory, nullptr);
+            if (m_VertexBuffer != VK_NULL_HANDLE) {
+                vkDestroyBuffer(VulkanEngine::GetDevice(), m_VertexBuffer, nullptr);
+                m_VertexBuffer = VK_NULL_HANDLE; // Optional: prevent double destruction
+            }
+
+            if (m_VertexBufferMemory != VK_NULL_HANDLE) {
+                vkFreeMemory(VulkanEngine::GetDevice(), m_VertexBufferMemory, nullptr);
+                m_VertexBufferMemory = VK_NULL_HANDLE;
+            }
         }
 
         void VertexBuffer::PrepareBindingDescription()
