@@ -1,6 +1,9 @@
 #include "Material.h"
 #include "VulkanEngine/VulkanEngine.h"
 #include "Renderer/BufferUtils.h"
+#include <chrono>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace CHIKU
 {
@@ -113,8 +116,27 @@ namespace CHIKU
 
     }
 
-    void Material::Bind(VkCommandBuffer commandBuffer)
+    void Material::UpdateUniformBuffer(uint32_t currentImage) const
     {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800 / (float)600, 0.1f, 10.0f);
+        proj[1][1] *= -1;
+
+        glm::mat4 result = model * view * proj;
+
+        memcpy(m_UniformBuffersMapped[currentImage], &result, m_UniformBufferLayout.size);
+    }
+
+    void Material::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout descriptorSetLayout, uint32_t currentFrame) const
+    {
+        UpdateUniformBuffer(currentFrame);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSetLayout, 0, 1, &m_DescriptorSets[currentFrame], 0, nullptr);
     }
 
     void Material::CleanUp()

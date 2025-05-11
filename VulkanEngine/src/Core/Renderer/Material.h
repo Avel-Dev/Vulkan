@@ -64,7 +64,8 @@ namespace CHIKU
     public:
         ~Material();
         void CreateMaterial(MaterialLayoutPreset preset);
-        void Bind(VkCommandBuffer commandBuffer);
+        void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout descriptorSetLayout, uint32_t currentFrame) const;
+        VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_Layout; }
         void CleanUp();
 
     private:
@@ -75,6 +76,8 @@ namespace CHIKU
         void CreateDescriptorSetLayout();
         void CreateDescriptorPool();
         void CreateDescriptorSets();
+
+        void UpdateUniformBuffer(uint32_t currentImage) const;
 
     private:
         UniformBufferLayout m_UniformBufferLayout; //

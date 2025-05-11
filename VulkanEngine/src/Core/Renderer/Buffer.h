@@ -82,7 +82,7 @@ namespace CHIKU
             inline VertexBufferLayout GetLayout() { return m_Layout; }
             inline VkVertexInputBindingDescription GetBindingDescription() const { return m_BindingDescription; }
             inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() const { return m_AttributeDescriptions; }
-            void Bind(VkCommandBuffer commandBuffer);
+            void Bind(VkCommandBuffer commandBuffer) const;
 
             void CleanUp();
 

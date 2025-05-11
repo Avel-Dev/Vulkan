@@ -5,23 +5,20 @@ namespace CHIKU
 {
 	void Renderer::Init()
 	{
-		m_Model = new Model();
-		m_Model->LoadMesh("models/viking_room.obj");
 	}
 		
 	void Renderer::Shutdown()
 	{
-		delete(m_Model);
 	}
 
 	void Renderer::BeginFrame()
 	{
-		VulkanEngine::s_Instance->BeginFrame();
+		VulkanEngine::BeginFrame();
 	}
 
 	void Renderer::EndFrame()
 	{
-		VulkanEngine::s_Instance->EndFrame();
+		VulkanEngine::EndFrame();
 	}
 
 	void Renderer::BeginScene()
@@ -30,6 +27,11 @@ namespace CHIKU
 
 	void Renderer::EndScene()
 	{
+	}
+
+	void Renderer::BindGraphicsPipeline(GraphicsPipeline pipeline)
+	{
+		pipeline.Bind(VulkanEngine::GetCommandBuffer());
 	}
 
 	void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform)

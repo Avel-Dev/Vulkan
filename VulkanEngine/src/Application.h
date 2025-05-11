@@ -17,5 +17,7 @@ namespace CHIKU
 		Window m_Window;
 		VulkanEngine m_Engine;
 		Renderer m_Renderer;
+		Model* model;
+		GraphicsPipeline pipeline;
 	};
 }

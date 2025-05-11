@@ -10,21 +10,26 @@ namespace CHIKU
 	class VulkanEngine
 	{
 	public:
-		static VulkanEngine* s_Instance;
-	public:
 		VulkanEngine();
 
 		void Init(GLFWwindow* window);
 		void CleanUp();
-		void BeginFrame();
-		void EndFrame();
+		void Wait();
 
+		static const uint32_t GetCurrentFrame() { return s_Instance->m_CurrentFrame; }
+		static const VkCommandBuffer GetCommandBuffer() { return s_Instance->m_Commands.GetCommandBuffer(s_Instance->m_CurrentFrame); }
+		static const void BeginFrame() { s_Instance->PrivateBeginFrame(); }
+		static const void EndFrame() { s_Instance->PrivateEndFrame(); }
+		static const VkRenderPass& GetRenderPass() { return s_Instance->m_Swapchain.GetRenderPass(); }
 		static const VkPhysicalDevice& GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
 		static const VkDevice& GetDevice() { return s_Instance->m_LogicalDevice; }
 		static const VkCommandBuffer BeginRecordingSingleTimeCommands() { return s_Instance->BeginSingleTimeCommands(); }
 		static const void EndRecordingSingleTimeCommands(VkCommandBuffer commandBuffer) { return s_Instance->EndSingleTimeCommands(commandBuffer); }
 
 	private:
+		void PrivateBeginFrame();
+		void PrivateEndFrame();
+
 		void BeginRecordingCommands(const VkCommandBuffer& commandBuffer);
 		void EndRecordingCommands(const VkCommandBuffer& commandBuffer);
 		VkCommandBuffer BeginSingleTimeCommands() { return m_Commands.BeginSingleTimeCommands(); }
@@ -56,6 +61,8 @@ namespace CHIKU
 		void CreateSyncObjects();
 
 	private:
+		static VulkanEngine* s_Instance;
+
 		std::vector<VkSemaphore> m_ImageAvailableSemaphore;
 		std::vector<VkSemaphore> m_RenderFinishedSemaphore;
 		std::vector<VkFence> m_InFlightFence;

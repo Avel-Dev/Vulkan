@@ -53,9 +53,6 @@ namespace CHIKU
 	{
 		DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
 
-		vkQueueWaitIdle(m_GraphicsQueue);
-		vkQueueWaitIdle(m_PresentQueue);
-
 		for (int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++)
 		{
 			vkDestroySemaphore(m_LogicalDevice, m_ImageAvailableSemaphore[i], nullptr);
@@ -76,7 +73,13 @@ namespace CHIKU
 		vkDestroyInstance(m_Instance, nullptr);
 	}
 
-	void VulkanEngine::BeginFrame()
+	void VulkanEngine::Wait()
+	{
+		vkQueueWaitIdle(m_GraphicsQueue);
+		vkQueueWaitIdle(m_PresentQueue);
+	}
+
+	void VulkanEngine::PrivateBeginFrame()
 	{
 		vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFence[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
@@ -92,11 +95,12 @@ namespace CHIKU
 		}
 		VkCommandBuffer commandBuffer = m_Commands.GetCommandBuffer(m_CurrentFrame);
 
+		vkResetFences(m_LogicalDevice, 1, &m_InFlightFence[m_CurrentFrame]);
 		vkResetCommandBuffer(commandBuffer, 0);
 		BeginRecordingCommands(commandBuffer);
 	}
 
-	void VulkanEngine::EndFrame()
+	void VulkanEngine::PrivateEndFrame()
 	{
 		EndRecordingCommands(m_Commands.GetCommandBuffer(m_CurrentFrame));
 		VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphore[m_CurrentFrame] };

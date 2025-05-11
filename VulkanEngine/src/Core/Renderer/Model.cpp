@@ -1,4 +1,6 @@
 #include "Model.h"
+#include "VulkanEngine/VulkanEngine.h"
+
 #include <algorithm>
 #include <tiny_obj_loader.h>
 
@@ -45,5 +47,11 @@ namespace CHIKU
 		}
 
 		m_Mesh.LoadMesh(attrib, shapes);
+	}
+
+	void Model::Bind(VkCommandBuffer commandBuffer,VkPipelineLayout pipeline) const
+	{
+		m_Material.Bind(commandBuffer,pipeline,VulkanEngine::GetCurrentFrame());
+		m_Mesh.Bind(commandBuffer);
 	}
 }

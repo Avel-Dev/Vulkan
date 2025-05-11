@@ -35,7 +35,7 @@ namespace CHIKU
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = Utils::FindMemoryType(VulkanEngine::s_Instance->GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
+            allocInfo.memoryTypeIndex = Utils::FindMemoryType(VulkanEngine::GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
             if (vkAllocateMemory(VulkanEngine::GetDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
             {

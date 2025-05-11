@@ -6,14 +6,15 @@ namespace CHIKU
     Mesh::Mesh() : m_VertexBuffer(Buffer::VertexLayoutPreset::StaticMesh)
     {
     }
+
     Mesh::~Mesh()
     {
-        CleanUp();
     }
 
     void Mesh::CleanUp()
     {
         m_VertexBuffer.CleanUp();
+        m_IndexBuffer.CleanUp();
     }
 
     void Mesh::LoadMesh(const tinyobj::attrib_t& attrib,const std::vector<tinyobj::shape_t>& shapes)
@@ -84,5 +85,17 @@ namespace CHIKU
         }
 
         m_VertexBuffer.SetData(m_VertexData);
+        m_IndexBuffer.CreateIndexBuffer(m_Indices);
 	}
+
+    void Mesh::Bind(VkCommandBuffer commandBuffer) const
+    {
+        m_VertexBuffer.Bind(commandBuffer);
+        m_IndexBuffer.Bind(commandBuffer);
+    }
+
+    void Mesh::Draw(VkCommandBuffer commandBuffer) const
+    {
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+    }
 }

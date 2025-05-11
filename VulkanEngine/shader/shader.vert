@@ -3,8 +3,6 @@
 // Uniform Buffer Object
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
-    mat4 view;
-    mat4 proj;
 } ubo;
 
 // Vertex input attributes
@@ -18,7 +16,7 @@ layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
     // Apply transformation (Model * View * Projection)
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+    gl_Position = ubo.model * vec4(inPosition, 1.0);
 
     // Pass the color to the fragment shader
     fragColor = inColor;

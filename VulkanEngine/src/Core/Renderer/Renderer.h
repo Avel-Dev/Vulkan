@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Model.h"
+#include "GraphicsPipeline.h"
 
 namespace CHIKU
 {
@@ -14,6 +14,8 @@ namespace CHIKU
 		void BeginScene();
 		void EndScene();
 
+		void BindGraphicsPipeline(GraphicsPipeline pipeline);
+
 		void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform);
 		void DrawModel(const Model& model, const glm::mat4& transform); 
 
@@ -22,8 +24,5 @@ namespace CHIKU
 
 		void BeginPostProcessing();
 		void EndPostProcessing();
-
-	private:
-		Model* m_Model;
 	};
 }

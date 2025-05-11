@@ -48,7 +48,7 @@ namespace CHIKU
             vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
         }
 
-        void VertexBuffer::Bind(VkCommandBuffer commandBuffer)
+        void VertexBuffer::Bind(VkCommandBuffer commandBuffer) const
         {
             VkBuffer vertexBuffers[] = { m_VertexBuffer };
             VkDeviceSize offsets[] = { 0 };
