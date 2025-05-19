@@ -1,26 +1,36 @@
 #pragma once
 #include "VulkanHeader.h"
-#include "Model.h"
-
+#include "Material.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+#include <vector>
+	
 namespace CHIKU
 {
-	struct PipelineState
+	struct PipelineStateInfo
 	{
-		const Model& model;
-		VkPipelineLayout m_PipelineLayout;
-		VkPipeline m_GraphicsPipeline;
+		std::string VertexShader;
+		std::string FragmentShader;
 	};
 
-	class GraphicsPipeline 
+	class GraphicsPipeline
 	{
 	public:
-		~GraphicsPipeline();
-
-		void CreatePipeline(const Model& model, VkRenderPass renderpass);
-		void Bind(VkCommandBuffer commandBuffer);
-		void Draw(VkCommandBuffer commandBuffer) const;
+		void Init();
+		void Bind();
 		void CleanUp();
+
 	private:
-		std::vector<PipelineState> m_State;
+		void LoadModel();
+		void CreateGraphicsPipeline();
+		void GetOrCreateGraphicsPipeline();
+
+	private:
+		VertexBuffer m_VertexBuffer;
+		IndexBuffer m_IndexBuffer;
+		Material m_Material;
+
+		VkPipelineLayout m_PipelineLayout;
+		VkPipeline m_GraphicsPipeline;
 	};
 }

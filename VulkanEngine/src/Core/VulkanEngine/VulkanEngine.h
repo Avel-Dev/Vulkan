@@ -16,15 +16,15 @@ namespace CHIKU
 		void CleanUp();
 		void Wait();
 
-		static const uint32_t GetCurrentFrame() { return s_Instance->m_CurrentFrame; }
-		static const VkCommandBuffer GetCommandBuffer() { return s_Instance->m_Commands.GetCommandBuffer(s_Instance->m_CurrentFrame); }
-		static const void BeginFrame() { s_Instance->PrivateBeginFrame(); }
-		static const void EndFrame() { s_Instance->PrivateEndFrame(); }
-		static const VkRenderPass& GetRenderPass() { return s_Instance->m_Swapchain.GetRenderPass(); }
-		static const VkPhysicalDevice& GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
-		static const VkDevice& GetDevice() { return s_Instance->m_LogicalDevice; }
-		static const VkCommandBuffer BeginRecordingSingleTimeCommands() { return s_Instance->BeginSingleTimeCommands(); }
-		static const void EndRecordingSingleTimeCommands(VkCommandBuffer commandBuffer) { return s_Instance->EndSingleTimeCommands(commandBuffer); }
+		static const inline uint32_t GetCurrentFrame() { return s_Instance->m_CurrentFrame; }
+		static const inline VkCommandBuffer GetCommandBuffer() { return s_Instance->m_Commands.GetCommandBuffer(s_Instance->m_CurrentFrame); }
+		static const inline void BeginFrame() { s_Instance->PrivateBeginFrame(); }
+		static const inline void EndFrame() { s_Instance->PrivateEndFrame(); }
+		static const inline VkRenderPass& GetRenderPass() { return s_Instance->m_Swapchain.GetRenderPass(); }
+		static const inline VkPhysicalDevice& GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
+		static const inline VkDevice& GetDevice() { return s_Instance->m_LogicalDevice; }
+		static const inline VkCommandBuffer BeginRecordingSingleTimeCommands() { return s_Instance->BeginSingleTimeCommands(); }
+		static const inline void EndRecordingSingleTimeCommands(VkCommandBuffer commandBuffer) { return s_Instance->EndSingleTimeCommands(commandBuffer); }
 
 	private:
 		void PrivateBeginFrame();
@@ -92,5 +92,8 @@ namespace CHIKU
 		};
 
 		std::vector<const char*> m_Extension;
+
+		VkPipelineLayout m_PipelineLayout;
+		VkPipeline m_GraphicsPipeline;
 	};
 }

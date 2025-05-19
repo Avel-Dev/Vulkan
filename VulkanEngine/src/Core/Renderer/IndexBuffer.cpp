@@ -1,50 +1,38 @@
 #include "IndexBuffer.h"
-#include "BufferUtils.h"
 #include "VulkanEngine/VulkanEngine.h"
+#include "BufferUtils.h"
 
 namespace CHIKU
 {
-    namespace Buffer
+    void IndexBuffer::CreateIndexBuffer(const std::vector<uint32_t>& indices)
     {
-        IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indices)
-        {
-            CreateIndexBuffer(indices);
-        }
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
-        IndexBuffer::IndexBuffer() : m_IndexBuffer(VK_NULL_HANDLE), m_IndexBufferMemory(VK_NULL_HANDLE)
-        {
-        }
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        Utils::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-        void IndexBuffer::CreateIndexBuffer(const std::vector<uint32_t>& indices)
-        {
-            VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        void* data;
+        vkMapMemory(VulkanEngine::GetDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), (size_t)bufferSize);
+        vkUnmapMemory(VulkanEngine::GetDevice(), stagingBufferMemory);
 
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
-            Utils::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        Utils::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_IndexBuffer, m_IndexBufferMemory);
 
-            void* data;
-            vkMapMemory(VulkanEngine::GetDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, indices.data(), (size_t)bufferSize);
-            vkUnmapMemory(VulkanEngine::GetDevice(), stagingBufferMemory);
+        Utils::CopyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
 
-            Utils::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_IndexBuffer, m_IndexBufferMemory);
+        vkDestroyBuffer(VulkanEngine::GetDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
+    }
 
-            Utils::CopyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
+    void IndexBuffer::Bind(VkCommandBuffer commandBuffer)
+    {
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    }
 
-            vkDestroyBuffer(VulkanEngine::GetDevice(), stagingBuffer, nullptr);
-            vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
-        }
-
-        void IndexBuffer::Bind(VkCommandBuffer commandBuffer) const
-        {
-            vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        }
-
-        void IndexBuffer::CleanUp()
-        {
-            vkDestroyBuffer(VulkanEngine::GetDevice(), m_IndexBuffer, nullptr);
-            vkFreeMemory(VulkanEngine::GetDevice(), m_IndexBufferMemory, nullptr);
-        }
+    void IndexBuffer::CleanUp()
+    {
+        vkDestroyBuffer(VulkanEngine::GetDevice(), m_IndexBuffer, nullptr);
+        vkFreeMemory(VulkanEngine::GetDevice(), m_IndexBufferMemory, nullptr);
     }
 }

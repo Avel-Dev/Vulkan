@@ -1,28 +1,19 @@
 #pragma once
-#include <glm/glm.hpp>
+#include "VulkanHeader.h"
 #include "GraphicsPipeline.h"
+#include <string>
 
 namespace CHIKU
 {
 	class Renderer
 	{
 	public:
-		void Init();             
-		void Shutdown();
-		void BeginFrame();
-		void EndFrame();
-		void BeginScene();
-		void EndScene();
+		static Renderer* s_Instance;
+		void Init();
+		void Draw();
+		void CleanUp();
 
-		void BindGraphicsPipeline(GraphicsPipeline pipeline);
-
-		void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform);
-		void DrawModel(const Model& model, const glm::mat4& transform); 
-
-		void BeginShadowPass();
-		void EndShadowPass();
-
-		void BeginPostProcessing();
-		void EndPostProcessing();
+	private:
+		GraphicsPipeline m_GraphicsPipeline;
 	};
 }

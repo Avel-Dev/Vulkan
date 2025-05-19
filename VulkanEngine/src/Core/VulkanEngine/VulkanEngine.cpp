@@ -64,6 +64,7 @@ namespace CHIKU
 		
 		vkDeviceWaitIdle(m_LogicalDevice);  // Or vkQueueWaitIdle(queue)
 
+
 		m_Commands.CleanUp();
 		m_Swapchain.CleanUp();
 		vkQueueWaitIdle(m_GraphicsQueue);

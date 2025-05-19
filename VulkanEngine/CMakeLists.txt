@@ -21,8 +21,7 @@ add_executable(VulkanEngine
     ${VENDOR_SOURCES}
     ${SRC_SOURCES}
     ${SRC_HEADERS}
-    "main.cpp"
-)
+    "main.cpp")
 
 message("Source :" ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(VulkanEngine PRIVATE CHIKU_SRC_PATH=${CMAKE_CURRENT_SOURCE_DIR}/)

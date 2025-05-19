@@ -1,21 +1,17 @@
 #include "Application.h"
+#include "Renderer/Renderer.h"
 
 namespace CHIKU
 {
 	Application::Application()
 	{
-		model = nullptr;
 	}
 
 	void Application::Init()
 	{
 		m_Window.Init();
 		m_Engine.Init(m_Window.GetWindow());
-		m_Renderer.Init();
-
-		model = new Model();
-		model->LoadMesh("models/viking_room.obj");
-		pipeline.CreatePipeline(*model, VulkanEngine::GetRenderPass());
+		Renderer::s_Instance->Init();
 	}
 
 	void Application::Run()
@@ -23,21 +19,16 @@ namespace CHIKU
 		while (!m_Window.WindowShouldClose())
 		{
 			m_Window.WindowPoolEvent();
-			m_Renderer.BeginFrame();
-
-			m_Renderer.BindGraphicsPipeline(pipeline);
-			pipeline.Draw(VulkanEngine::GetCommandBuffer());
-
-			m_Renderer.EndFrame();
+			m_Engine.BeginFrame();
+			Renderer::s_Instance->Draw();
+			m_Engine.EndFrame();
 		}
 	}
 
 	void Application::CleanUp()
 	{
 		m_Engine.Wait();
-		delete(model);
-		pipeline.CleanUp();
-		m_Renderer.Shutdown();
+		Renderer::s_Instance->CleanUp();
 		m_Engine.CleanUp();
 	}
 }

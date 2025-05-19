@@ -4,82 +4,83 @@
 
 namespace CHIKU
 {
-    namespace Utils
-    {
-        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-        {
-            auto commandBuffer = VulkanEngine::BeginRecordingSingleTimeCommands();
-            VkBufferCopy copyRegion{};
-            copyRegion.srcOffset = 0; // Optional
-            copyRegion.dstOffset = 0; // Optional
-            copyRegion.size = size;
-            vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-            VulkanEngine::EndRecordingSingleTimeCommands(commandBuffer);
-        }
-        void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
-        {
-            VkBufferCreateInfo bufferInfo{};
-            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            bufferInfo.size = size;
-            bufferInfo.usage = usage;
-            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	namespace Utils
+	{
+		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+		{
+			auto commandBuffer = VulkanEngine::BeginRecordingSingleTimeCommands();
+			VkBufferCopy copyRegion{};
+			copyRegion.srcOffset = 0; // Optional
+			copyRegion.dstOffset = 0; // Optional
+			copyRegion.size = size;
+			vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+			VulkanEngine::EndRecordingSingleTimeCommands(commandBuffer);
+		}
 
-            if (vkCreateBuffer(VulkanEngine::GetDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to create buffer!");
-            }
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+		{
+			VkBufferCreateInfo bufferInfo{};
+			bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+			bufferInfo.size = size;
+			bufferInfo.usage = usage;
+			bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-            VkMemoryRequirements memRequirements;
-            vkGetBufferMemoryRequirements(VulkanEngine::GetDevice(), buffer, &memRequirements);
+			if (vkCreateBuffer(VulkanEngine::GetDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create buffer!");
+			}
 
-            VkMemoryAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = Utils::FindMemoryType(VulkanEngine::GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
+			VkMemoryRequirements memRequirements;
+			vkGetBufferMemoryRequirements(VulkanEngine::GetDevice(), buffer, &memRequirements);
 
-            if (vkAllocateMemory(VulkanEngine::GetDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to allocate buffer memory!");
-            }
+			VkMemoryAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+			allocInfo.allocationSize = memRequirements.size;
+			allocInfo.memoryTypeIndex = Utils::FindMemoryType(VulkanEngine::GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
-            vkBindBufferMemory(VulkanEngine::GetDevice(), buffer, bufferMemory, 0);
-        }
+			if (vkAllocateMemory(VulkanEngine::GetDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to allocate buffer memory!");
+			}
 
-        size_t GetAttributeSize(Buffer::VertexAttributeType type)
+			vkBindBufferMemory(VulkanEngine::GetDevice(), buffer, bufferMemory, 0);
+		}
+
+        size_t GetAttributeSize(VertexAttributeType type)
         {
             switch (type)
             {
-            case Buffer::VertexAttributeType::Float:     return 4;
-            case Buffer::VertexAttributeType::Vec2:      return 4 * 2;
-            case Buffer::VertexAttributeType::Vec3:      return 4 * 3;
-            case Buffer::VertexAttributeType::Vec4:      return 4 * 4;
+            case VertexAttributeType::Float:     return 4;
+            case VertexAttributeType::Vec2:      return 4 * 2;
+            case VertexAttributeType::Vec3:      return 4 * 3;
+            case VertexAttributeType::Vec4:      return 4 * 4;
 
-            case Buffer::VertexAttributeType::Int:       return 4;
-            case Buffer::VertexAttributeType::IVec2:     return 4 * 2;
-            case Buffer::VertexAttributeType::IVec3:     return 4 * 3;
-            case Buffer::VertexAttributeType::IVec4:     return 4 * 4;
+            case VertexAttributeType::Int:       return 4;
+            case VertexAttributeType::IVec2:     return 4 * 2;
+            case VertexAttributeType::IVec3:     return 4 * 3;
+            case VertexAttributeType::IVec4:     return 4 * 4;
 
-            case Buffer::VertexAttributeType::UInt:      return 4;
-            case Buffer::VertexAttributeType::UVec2:     return 4 * 2;
-            case Buffer::VertexAttributeType::UVec3:     return 4 * 3;
-            case Buffer::VertexAttributeType::UVec4:     return 4 * 4;
+            case VertexAttributeType::UInt:      return 4;
+            case VertexAttributeType::UVec2:     return 4 * 2;
+            case VertexAttributeType::UVec3:     return 4 * 3;
+            case VertexAttributeType::UVec4:     return 4 * 4;
 
-            case Buffer::VertexAttributeType::Byte4:     return 1 * 4;
-            case Buffer::VertexAttributeType::Byte4N:    return 1 * 4;
-            case Buffer::VertexAttributeType::UByte4:    return 1 * 4;
-            case Buffer::VertexAttributeType::UByte4N:   return 1 * 4;
+            case VertexAttributeType::Byte4:     return 1 * 4;
+            case VertexAttributeType::Byte4N:    return 1 * 4;
+            case VertexAttributeType::UByte4:    return 1 * 4;
+            case VertexAttributeType::UByte4N:   return 1 * 4;
 
-            case Buffer::VertexAttributeType::Short2:    return 2 * 2;
-            case Buffer::VertexAttributeType::Short2N:   return 2 * 2;
-            case Buffer::VertexAttributeType::Short4:    return 2 * 4;
-            case Buffer::VertexAttributeType::Short4N:   return 2 * 4;
+            case VertexAttributeType::Short2:    return 2 * 2;
+            case VertexAttributeType::Short2N:   return 2 * 2;
+            case VertexAttributeType::Short4:    return 2 * 4;
+            case VertexAttributeType::Short4N:   return 2 * 4;
 
-            case Buffer::VertexAttributeType::Unknown:   return 0;
+            case VertexAttributeType::Unknown:   return 0;
             default:                                     return 0;
             }
         }
 
-        void FinalizeLayout(Buffer::VertexBufferLayout& layout)
+        void FinalizeLayout(VertexBufferLayout& layout)
         {
             uint32_t offset = 0;
             for (auto& attr : layout.VertexElements)
@@ -90,60 +91,60 @@ namespace CHIKU
             layout.Stride = offset;
         }
 
-        Buffer::VertexBufferLayout CreateVertexBufferLayout(Buffer::VertexLayoutPreset preset)
+        VertexBufferLayout CreateVertexBufferLayout(VertexLayoutPreset preset)
         {
-            Buffer::VertexBufferLayout layout;
+            VertexBufferLayout layout;
 
             switch (preset)
             {
-            case Buffer::VertexLayoutPreset::StaticMesh:
+            case VertexLayoutPreset::StaticMesh:
                 layout.VertexElements = {
-                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_NORMAL,   Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_TEXCOORD, Buffer::VertexAttributeType::Vec2}
+                    {VERTEX_FIELD_POSITION, VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_NORMAL,   VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_TEXCOORD, VertexAttributeType::Vec2}
                 };
                 break;
 
-            case Buffer::VertexLayoutPreset::SkinnedMesh:
+            case VertexLayoutPreset::SkinnedMesh:
                 layout.VertexElements = {
-                    {VERTEX_FIELD_POSITION,  Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_NORMAL,    Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_TEXCOORD,  Buffer::VertexAttributeType::Vec2},
-                    {VERTEX_FIELD_BONEIDS,  Buffer::VertexAttributeType::UByte4},
-                    {VERTEX_FIELD_WEIGHTS,   Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION,  VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_NORMAL,    VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_TEXCOORD,  VertexAttributeType::Vec2},
+                    {VERTEX_FIELD_BONEIDS,  VertexAttributeType::UByte4},
+                    {VERTEX_FIELD_WEIGHTS,   VertexAttributeType::Vec4}
                 };
                 break;
 
-            case Buffer::VertexLayoutPreset::LitMesh:
+            case VertexLayoutPreset::LitMesh:
                 layout.VertexElements = {
-                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_NORMAL,   Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_TEXCOORD, Buffer::VertexAttributeType::Vec2},
-                    {VERTEX_FIELD_TANGENT,  Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION, VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_NORMAL,   VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_TEXCOORD, VertexAttributeType::Vec2},
+                    {VERTEX_FIELD_TANGENT,  VertexAttributeType::Vec4}
                 };
                 break;
 
-            case Buffer::VertexLayoutPreset::ColoredMesh:
+            case VertexLayoutPreset::ColoredMesh:
                 layout.VertexElements = {
-                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_COLOR,    Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION, VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_COLOR,    VertexAttributeType::Vec4}
                 };
                 break;
 
-            case Buffer::VertexLayoutPreset::DebugLine:
+            case VertexLayoutPreset::DebugLine:
                 layout.VertexElements = {
-                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3},
-                    {VERTEX_FIELD_COLOR,    Buffer::VertexAttributeType::Vec4}
+                    {VERTEX_FIELD_POSITION, VertexAttributeType::Vec3},
+                    {VERTEX_FIELD_COLOR,    VertexAttributeType::Vec4}
                 };
                 break;
 
-            case Buffer::VertexLayoutPreset::PointCloud:
+            case VertexLayoutPreset::PointCloud:
                 layout.VertexElements = {
-                    {VERTEX_FIELD_POSITION, Buffer::VertexAttributeType::Vec3}
+                    {VERTEX_FIELD_POSITION, VertexAttributeType::Vec3}
                 };
                 break;
 
-            case Buffer::VertexLayoutPreset::Custom:
+            case VertexLayoutPreset::Custom:
                 throw std::runtime_error("Custom Vertex Buffer Layout is not supported yet");
                 break;
 
@@ -155,37 +156,37 @@ namespace CHIKU
             return layout;
         }
 
-        VkFormat MapVertexAttributeTypeToVkFormat(Buffer::VertexAttributeType type) 
+        VkFormat MapVertexAttributeTypeToVkFormat(VertexAttributeType type)
         {
             switch (type) {
-            case Buffer::VertexAttributeType::Float:     return VK_FORMAT_R32_SFLOAT;
-            case Buffer::VertexAttributeType::Vec2:      return VK_FORMAT_R32G32_SFLOAT;
-            case Buffer::VertexAttributeType::Vec3:      return VK_FORMAT_R32G32B32_SFLOAT;
-            case Buffer::VertexAttributeType::Vec4:      return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case VertexAttributeType::Float:     return VK_FORMAT_R32_SFLOAT;
+            case VertexAttributeType::Vec2:      return VK_FORMAT_R32G32_SFLOAT;
+            case VertexAttributeType::Vec3:      return VK_FORMAT_R32G32B32_SFLOAT;
+            case VertexAttributeType::Vec4:      return VK_FORMAT_R32G32B32A32_SFLOAT;
 
-            case Buffer::VertexAttributeType::Int:       return VK_FORMAT_R32_SINT;
-            case Buffer::VertexAttributeType::IVec2:     return VK_FORMAT_R32G32_SINT;
-            case Buffer::VertexAttributeType::IVec3:     return VK_FORMAT_R32G32B32_SINT;
-            case Buffer::VertexAttributeType::IVec4:     return VK_FORMAT_R32G32B32A32_SINT;
+            case VertexAttributeType::Int:       return VK_FORMAT_R32_SINT;
+            case VertexAttributeType::IVec2:     return VK_FORMAT_R32G32_SINT;
+            case VertexAttributeType::IVec3:     return VK_FORMAT_R32G32B32_SINT;
+            case VertexAttributeType::IVec4:     return VK_FORMAT_R32G32B32A32_SINT;
 
-            case Buffer::VertexAttributeType::UInt:      return VK_FORMAT_R32_UINT;
-            case Buffer::VertexAttributeType::UVec2:     return VK_FORMAT_R32G32_UINT;
-            case Buffer::VertexAttributeType::UVec3:     return VK_FORMAT_R32G32B32_UINT;
-            case Buffer::VertexAttributeType::UVec4:     return VK_FORMAT_R32G32B32A32_UINT;
+            case VertexAttributeType::UInt:      return VK_FORMAT_R32_UINT;
+            case VertexAttributeType::UVec2:     return VK_FORMAT_R32G32_UINT;
+            case VertexAttributeType::UVec3:     return VK_FORMAT_R32G32B32_UINT;
+            case VertexAttributeType::UVec4:     return VK_FORMAT_R32G32B32A32_UINT;
 
-            case Buffer::VertexAttributeType::Byte4:     return VK_FORMAT_R8G8B8A8_SNORM;
-            case Buffer::VertexAttributeType::Byte4N:    return VK_FORMAT_R8G8B8A8_SNORM;
-            case Buffer::VertexAttributeType::UByte4:    return VK_FORMAT_R8G8B8A8_UINT;
-            case Buffer::VertexAttributeType::UByte4N:   return VK_FORMAT_R8G8B8A8_UNORM;
+            case VertexAttributeType::Byte4:     return VK_FORMAT_R8G8B8A8_SNORM;
+            case VertexAttributeType::Byte4N:    return VK_FORMAT_R8G8B8A8_SNORM;
+            case VertexAttributeType::UByte4:    return VK_FORMAT_R8G8B8A8_UINT;
+            case VertexAttributeType::UByte4N:   return VK_FORMAT_R8G8B8A8_UNORM;
 
-            case Buffer::VertexAttributeType::Short2:    return VK_FORMAT_R16G16_SINT;
-            case Buffer::VertexAttributeType::Short2N:   return VK_FORMAT_R16G16_SNORM;
-            case Buffer::VertexAttributeType::Short4:    return VK_FORMAT_R16G16B16A16_SINT;
-            case Buffer::VertexAttributeType::Short4N:   return VK_FORMAT_R16G16B16A16_SNORM;
+            case VertexAttributeType::Short2:    return VK_FORMAT_R16G16_SINT;
+            case VertexAttributeType::Short2N:   return VK_FORMAT_R16G16_SNORM;
+            case VertexAttributeType::Short4:    return VK_FORMAT_R16G16B16A16_SINT;
+            case VertexAttributeType::Short4N:   return VK_FORMAT_R16G16B16A16_SNORM;
 
-            case Buffer::VertexAttributeType::Unknown:
+            case VertexAttributeType::Unknown:
             default:                             return VK_FORMAT_UNDEFINED;
             }
         }
-    }
+	}
 }

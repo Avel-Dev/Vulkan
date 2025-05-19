@@ -1,272 +1,185 @@
 #include "Material.h"
 #include "VulkanEngine/VulkanEngine.h"
-#include "Renderer/BufferUtils.h"
-#include <chrono>
+#include "BufferUtils.h"
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
+
+#include <chrono>
 
 namespace CHIKU
 {
-    Material::~Material()
-    {
-        CleanUp();
-    }
+	std::map<MaterialPresets, VkDescriptorSetLayout> Material::m_DescriptorSetLayouts;
+	std::map<MaterialPresets, VkDescriptorPool> Material::m_DescriptorPools;
 
-    void Material::CreateMaterial(MaterialLayoutPreset preset)
-    {
-        m_UniformBufferLayout = GetDescriptorLayoutForPreset(preset);
-        CreateDescriptorSetLayout();
-        CreateDescriptorPool();
-        CreateUniformBuffer();
-        m_Textures[0].CreateTexture("textures/viking_room.png");
-        CreateDescriptorSets();
-    }
+	ShaderID Material::GetMaterialShader(MaterialPresets presets)
+	{
+		switch (presets)
+		{
+		case CHIKU::Lit: return ShaderID::Basic;
+		case CHIKU::Unlit: return ShaderID::Basic;
+		}
 
-    void Material::CreateUniformBuffer()
-    {
-        VkDeviceSize bufferSize = m_UniformBufferLayout.size;
-        m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-        m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-        m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+		return ShaderID::Basic;
+	}
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            Utils::CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                m_UniformBuffers[i], m_UniformBuffersMemory[i]);
+	VkDescriptorSetLayout Material::GetOrBuildDescriptorLayout(MaterialPresets presets)
+	{
+		if (m_DescriptorSetLayouts.find(presets) != m_DescriptorSetLayouts.end())
+		{
+			return m_DescriptorSetLayouts[presets];
+		}
+		return CreateDescriptorSetLayout(presets);
+	}
 
-            vkMapMemory(VulkanEngine::GetDevice(), m_UniformBuffersMemory[i], 0, bufferSize, 0, &m_UniformBuffersMapped[i]);
-        }
-    }
+	VkDescriptorSetLayout Material::CreateDescriptorSetLayout(MaterialPresets presets)
+	{
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.pImmutableSamplers = nullptr;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-    void Material::CreateDescriptorPool()
-    {
-        std::vector<VkDescriptorPoolSize> poolSizes{};
-        poolSizes.resize(m_UniformBufferLayout.BufferAttributes.size());
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = 1;
+		layoutInfo.pBindings = &uboLayoutBinding;
 
-        for (int i = 0;i < m_UniformBufferLayout.BufferAttributes.size(); i++)
-        {
-            poolSizes[i].type = m_UniformBufferLayout.BufferAttributes[i].DescriptorType;
-            poolSizes[i].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        }
+		m_DescriptorSetLayouts[presets] = nullptr;
 
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		if (vkCreateDescriptorSetLayout(VulkanEngine::GetDevice(), &layoutInfo, nullptr, &m_DescriptorSetLayouts[presets]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
 
-        if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
-    }
+	VkDescriptorPool Material::CreateDescriptorPool(MaterialPresets presets)
+	{
+		VkDescriptorPoolSize poolSizes{};
+		poolSizes.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-    void Material::CreateDescriptorSets()
-    {
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_Layout);
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_DescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = 1;
+		poolInfo.pPoolSizes = &poolSizes;
+		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-        m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        if (vkAllocateDescriptorSets(VulkanEngine::GetDevice(), &allocInfo, m_DescriptorSets.data()) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
+		m_DescriptorPools[presets] = nullptr;
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
-        {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_UniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = m_UniformBufferLayout.size;
+		if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &m_DescriptorPools[presets]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+	}
 
-            std::vector<VkDescriptorImageInfo> imageInfo;
-            imageInfo.resize(m_Textures.size());
-            for (int i = 0; i < m_Textures.size();i++)
-            {
-                imageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo[i].imageView = m_Textures[i].GetTextureImageView();
-                imageInfo[i].sampler = m_Textures[i].GetTextureImageSampler();
-            }
+	void Material::CreateDescriptorSets()
+	{
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayouts[m_Preset]);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = m_DescriptorPools[m_Preset];
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		allocInfo.pSetLayouts = layouts.data();
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+		m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+		if (vkAllocateDescriptorSets(VulkanEngine::GetDevice(), &allocInfo, m_DescriptorSets.data()) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
 
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = m_DescriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = m_UniformBuffers[i];
+			bufferInfo.offset = 0;
+			bufferInfo.range = sizeof(UniformBufferObject);
 
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = m_DescriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = imageInfo.data();
+			VkWriteDescriptorSet descriptorWrites{};
 
-            vkUpdateDescriptorSets(VulkanEngine::GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-        }
+			descriptorWrites.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites.dstSet = m_DescriptorSets[i];
+			descriptorWrites.dstBinding = 0;
+			descriptorWrites.dstArrayElement = 0;
+			descriptorWrites.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites.descriptorCount = 1;
+			descriptorWrites.pBufferInfo = &bufferInfo;
 
-    }
+			vkUpdateDescriptorSets(VulkanEngine::GetDevice(), 1, &descriptorWrites, 0, nullptr);
+		}
+	}
 
-    void Material::UpdateUniformBuffer(uint32_t currentImage) const
-    {
-        static auto startTime = std::chrono::high_resolution_clock::now();
+	void Material::CreateUniformBuffer()
+	{
+		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+		m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			Utils::CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				m_UniformBuffers[i], m_UniformBuffersMemory[i]);
 
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800 / (float)600, 0.1f, 10.0f);
-        proj[1][1] *= -1;
+			vkMapMemory(VulkanEngine::GetDevice(), m_UniformBuffersMemory[i], 0, bufferSize, 0, &m_UniformBuffersMapped[i]);
+		}
+	}
 
-        glm::mat4 result = model * view * proj;
+	void Material::CreateMaterial(MaterialPresets presets)
+	{
+		m_Preset = presets;
+		m_ShaderID = GetMaterialShader(m_Preset);
+		m_MaterialLayout = Material::GetOrBuildDescriptorLayout(m_Preset);
+		m_MaterialMemoryPool = Material::CreateDescriptorPool(m_Preset);
+		CreateUniformBuffer();
+		CreateDescriptorSets();
+	}
 
-        memcpy(m_UniformBuffersMapped[currentImage], &result, m_UniformBufferLayout.size);
-    }
+	void Material::Update()
+	{
+		static auto startTime = std::chrono::high_resolution_clock::now();
 
-    void Material::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout descriptorSetLayout, uint32_t currentFrame) const
-    {
-        UpdateUniformBuffer(currentFrame);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSetLayout, 0, 1, &m_DescriptorSets[currentFrame], 0, nullptr);
-    }
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    void Material::CleanUp()
-    {
-        if (m_Layout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), m_Layout, nullptr);
-            vkDestroyDescriptorPool(VulkanEngine::GetDevice(),m_DescriptorPool,nullptr);
+		UniformBufferObject ubo{};
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), 800 / (float)600, 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
 
-            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                vkDestroyBuffer(VulkanEngine::GetDevice(), m_UniformBuffers[i], nullptr);
-                vkFreeMemory(VulkanEngine::GetDevice(), m_UniformBuffersMemory[i], nullptr);
-            }
-            for (auto& i : m_Textures)
-            {
-                i.CleanUp();
-            }
-        }
-    }
+		memcpy(m_UniformBuffersMapped[VulkanEngine::GetCurrentFrame()], &ubo, sizeof(ubo));
+	}
 
-    size_t Material::GetAttributeSize(const UniformPlainDataType& attributeType)
-    {
-        switch (attributeType)
-        {
-        case UniformPlainDataType::Vec2:
-            return sizeof(glm::vec2);  // 2 floats (should be padded to 4 bytes in std140)
-        case UniformPlainDataType::Vec3:
-            return sizeof(glm::vec3);  // 3 floats (should be padded to 4 floats, or 16 bytes)
-        case UniformPlainDataType::Vec4:
-            return sizeof(glm::vec4);  // 4 floats
-        case UniformPlainDataType::IVec2:
-            return sizeof(glm::ivec2); // 2 ints (should be padded to 4 ints, or 16 bytes)
-        case UniformPlainDataType::IVec3:
-            return sizeof(glm::ivec3); // 3 ints (should be padded to 4 ints, or 16 bytes)
-        case UniformPlainDataType::IVec4:
-            return sizeof(glm::ivec4); // 4 ints
-        case UniformPlainDataType::Mat3:
-            return sizeof(glm::mat4);  // 3x3 matrix (should be padded to a 4x4 matrix, 16 floats or 64 bytes)
-        case UniformPlainDataType::Mat4:
-            return sizeof(glm::mat4);  // 4x4 matrix, already aligned to 16 floats (64 bytes)
-        case UniformPlainDataType::Sampler2D:
-            return sizeof(VkSampler);  // Typically a pointer, size depends on platform (usually 4 bytes)
-        default:
-            return 0;  // Undefined or unsupported type
-        }
-    }
+	void Material::Bind(VkPipelineLayout pipelineLayout)
+	{
+		vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &m_DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
+	}
 
-    UniformBufferLayout Material::GetDescriptorLayoutForPreset(const MaterialLayoutPreset& preset)
-    {
-        UniformBufferLayout layout;
+	void Material::CleanUp()
+	{
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			vkDestroyBuffer(VulkanEngine::GetDevice(), m_UniformBuffers[i], nullptr);
+			vkFreeMemory(VulkanEngine::GetDevice(), m_UniformBuffersMemory[i], nullptr);
+		}
+	}
 
-        switch (preset) {
-        case MaterialLayoutPreset::None:
-            break;
+	void Material::StaticCleanUp()
+	{
+		for (auto& i : m_DescriptorPools)
+		{
+			vkDestroyDescriptorPool(VulkanEngine::GetDevice(), i.second, nullptr);
+		}
 
-        case MaterialLayoutPreset::MVP:
-            layout.BufferAttributes = {
-                { "u_MVP", UniformPlainDataType::Mat4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT }
-            };
-            break;
-
-        case MaterialLayoutPreset::ModelViewProjection:
-            layout.BufferAttributes = {
-                { "u_Model", UniformPlainDataType::Mat4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },
-                { "u_View", UniformPlainDataType::Mat4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },
-                { "u_Proj", UniformPlainDataType::Mat4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT }
-            };
-            break;
-
-        case MaterialLayoutPreset::MVPUnlitTextured:
-            layout.BufferAttributes = {
-                { "u_MVP", UniformPlainDataType::Mat4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },
-                { "Texture", UniformOpaqueDataType::Sampler2D, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
-            };
-            break;
-
-        case MaterialLayoutPreset::MVPStandard:
-            break;
-        }
-
-        layout.size = 0;
-        for (auto& b : layout.BufferAttributes)
-        {
-            if (UniformPlainDataType* plainData = std::get_if<UniformPlainDataType>(&b.AttributeType)) {
-                layout.size += GetAttributeSize(*plainData);
-            }
-        }
-
-        return layout;
-    }
-
-    void Material::CreateDescriptorSetLayout()
-    {
-        std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.reserve(m_UniformBufferLayout.BufferAttributes.size());
-
-        int numberOfTextures = 0;
-        int bindingLocation = 0;
-        for (int i = 0; i < m_UniformBufferLayout.BufferAttributes.size(); i++)
-        {
-            if (m_UniformBufferLayout.BufferAttributes[i].DescriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-            {
-                numberOfTextures++;
-            }
-
-            VkDescriptorSetLayoutBinding binding{};
-            binding.binding = bindingLocation;
-            binding.descriptorType = m_UniformBufferLayout.BufferAttributes[i].DescriptorType;
-            binding.descriptorCount = 1;
-            binding.stageFlags = m_UniformBufferLayout.BufferAttributes[i].ShaderStageFlag;
-            binding.pImmutableSamplers = nullptr;
-
-            bindings.push_back(binding);
-
-            if ((i + 1) != m_UniformBufferLayout.BufferAttributes.size() && std::holds_alternative<UniformOpaqueDataType>(m_UniformBufferLayout.BufferAttributes[i + 1].AttributeType))
-            {
-                bindingLocation++;
-            }
-        }
-
-        m_Textures.resize(numberOfTextures);
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        layoutInfo.pBindings = bindings.data();
-
-        if (vkCreateDescriptorSetLayout(VulkanEngine::GetDevice(), &layoutInfo, nullptr, &m_Layout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create descriptor set layout!");
-        }
-    }
+		for (auto& i : m_DescriptorSetLayouts)
+		{
+			vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), i.second, nullptr);
+		}
+	}
 }

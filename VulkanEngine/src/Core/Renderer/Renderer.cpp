@@ -1,62 +1,29 @@
 #include "Renderer.h"
 #include "VulkanEngine/VulkanEngine.h"
+#include "Shader.h"
+#include <fstream>
+#include <iostream>
 
 namespace CHIKU
 {
+    Renderer* Renderer::s_Instance = new Renderer();
+
 	void Renderer::Init()
 	{
+		ShaderManager::Init();
+		m_GraphicsPipeline.Init();
 	}
-		
-	void Renderer::Shutdown()
+
+	void Renderer::Draw()
 	{
+		m_GraphicsPipeline.Bind();
+		vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),36,1,0,0,0);
 	}
 
-	void Renderer::BeginFrame()
+	void Renderer::CleanUp()
 	{
-		VulkanEngine::BeginFrame();
+		ShaderManager::Cleanup();
+		m_GraphicsPipeline.CleanUp();
 	}
 
-	void Renderer::EndFrame()
-	{
-		VulkanEngine::EndFrame();
-	}
-
-	void Renderer::BeginScene()
-	{
-	}
-
-	void Renderer::EndScene()
-	{
-	}
-
-	void Renderer::BindGraphicsPipeline(GraphicsPipeline pipeline)
-	{
-		pipeline.Bind(VulkanEngine::GetCommandBuffer());
-	}
-
-	void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform)
-	{
-
-	}
-
-	void Renderer::DrawModel(const Model& model, const glm::mat4& transform)
-	{
-
-	}
-
-	void Renderer::BeginShadowPass()
-	{
-	}
-
-	void Renderer::EndShadowPass()
-	{
-	}
-
-	void Renderer::BeginPostProcessing()
-	{
-	}
-
-	void Renderer::EndPostProcessing()
-	{
-	}
 }
