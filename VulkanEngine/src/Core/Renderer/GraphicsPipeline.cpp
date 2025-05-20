@@ -4,108 +4,69 @@
 #include "Shader.h"
 #include <chrono>
 #include <array>
-#include <tiny_obj_loader.h>
+
 
 namespace CHIKU
 {
-    struct VertexData
-    {
-        glm::vec3 position;
-        glm::vec3 color;
-    };
+    std::unordered_map<PipelineKey, GraphicsPipeline::Pipeline> GraphicsPipeline::sm_GrphicsPipeline;
 
 	void GraphicsPipeline::Init()
 	{
-        m_Material.CreateMaterial(MaterialPresets::Unlit);
-	
-        LoadModel();
-		CreateGraphicsPipeline();
 	}
 
-    void GraphicsPipeline::Bind()
+    void GraphicsPipeline::Bind(const Material& material, const VertexBuffer& vertexbuffer)
     {
-        m_Material.Update();
-        vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
-        m_Material.Bind(m_PipelineLayout);
-        m_IndexBuffer.Bind(VulkanEngine::GetCommandBuffer());
-        m_VertexBuffer.Bind(VulkanEngine::GetCommandBuffer());
+        PipelineKey key = {
+           material.GetShaderID(),
+           vertexbuffer.GetBufferLayout(),
+           material.GetMaterialType()
+        };
+
+        GetOrCreateGraphicsPipeline(key, material, vertexbuffer);
+
+        vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, sm_GrphicsPipeline.at(key).GraphicsPipeline);
+
+        material.Bind(sm_GrphicsPipeline.at(key).PipelineLayout);
+        vertexbuffer.Bind(VulkanEngine::GetCommandBuffer());
     }
 
     void GraphicsPipeline::CleanUp()
     {
-        m_Material.CleanUp();
-        m_Material.StaticCleanUp();
-        m_VertexBuffer.CleanUp();
-        m_IndexBuffer.CleanUp();
+        for (auto i : sm_GrphicsPipeline)
+        {
+            vkDestroyPipeline(VulkanEngine::GetDevice(), i.second.GraphicsPipeline, nullptr);
+            vkDestroyPipelineLayout(VulkanEngine::GetDevice(), i.second.PipelineLayout, nullptr);
+        }
 
-        vkDestroyPipeline(VulkanEngine::GetDevice(), m_GraphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(VulkanEngine::GetDevice(), m_PipelineLayout, nullptr);
+        sm_GrphicsPipeline.clear();
     }
 
-    void GraphicsPipeline::GetOrCreateGraphicsPipeline()
+    GraphicsPipeline::Pipeline GraphicsPipeline::GetOrCreateGraphicsPipeline(PipelineKey key, const Material& material, const VertexBuffer& vertexBuffer)
     {
+        if (sm_GrphicsPipeline.find(key) == sm_GrphicsPipeline.end())
+        {
+            sm_GrphicsPipeline[key] = CreateGraphicsPipeline(
+                ShaderManager::GetShaderStages(material.GetShaderID()).data(), 
+                vertexBuffer.GetBufferDescription(), 
+                material.GetDescriptorLayout()
+            );
+        }
 
+        return sm_GrphicsPipeline.at(key);
     }
 
-    void GraphicsPipeline::LoadModel()
-    {
-        std::vector<uint32_t> indices;
-        std::vector<VertexData> data;
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "C:/dev/box.obj"))
-        {
-            throw std::runtime_error(warn + err);
-        }
-
-        for (const auto& shape : shapes)
-        {
-            for (const auto& index : shape.mesh.indices)
-            {
-                glm::vec3 position = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-                };
-
-                glm::vec3 color = { 1.0f, 1.0f, 1.0f };
-
-                data.emplace_back(position, color);
-                indices.push_back((uint32_t)indices.size());
-            }
-        }
-
-        std::vector<uint8_t> vertexBytes(
-            reinterpret_cast<uint8_t*>(data.data()),
-            reinterpret_cast<uint8_t*>(data.data()) + data.size() * sizeof(VertexData)
-        );
-
-        m_VertexBuffer.SetLayout({
-        {
-            {"inPosition",VertexAttributeType::Vec3},
-            {"inColor",VertexAttributeType::Vec3}
-        }
-            });
-        m_VertexBuffer.Init();
-        m_VertexBuffer.CreateVertexBuffer(vertexBytes);
-        m_IndexBuffer.CreateIndexBuffer(indices);
-    }
-
-    void GraphicsPipeline::CreateGraphicsPipeline()
+    GraphicsPipeline::Pipeline GraphicsPipeline::CreateGraphicsPipeline(const VkPipelineShaderStageCreateInfo* pipelineStages, VertexBuffer::VertexInputDescription description, VkDescriptorSetLayout layout)
 	{
+        VkPipelineLayout pipelineLayout;
+        VkPipeline graphicsPipeline;
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        auto bindingDescription = m_VertexBuffer.GetBindingDescription();
-        auto attributeDescriptions = m_VertexBuffer.GetAttributeDescriptions();
-
         vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(description.AttributeDescription.size());
+        vertexInputInfo.pVertexBindingDescriptions = &description.BindingDescription;
+        vertexInputInfo.pVertexAttributeDescriptions = description.AttributeDescription.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -161,10 +122,9 @@ namespace CHIKU
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
 
-        auto val = m_Material.GetDescriptorLayout();
-        pipelineLayoutInfo.pSetLayouts = &val;
+        pipelineLayoutInfo.pSetLayouts = &layout;
 
-        if (vkCreatePipelineLayout(VulkanEngine::GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
+        if (vkCreatePipelineLayout(VulkanEngine::GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create pipeline layout!");
         }
@@ -185,7 +145,7 @@ namespace CHIKU
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
 
-        pipelineInfo.pStages = ShaderManager::GetShaderStages(m_Material.GetShaderID()).data();
+        pipelineInfo.pStages = pipelineStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
@@ -193,17 +153,20 @@ namespace CHIKU
         pipelineInfo.pMultisampleState = &multisampling;
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = m_PipelineLayout;
+        pipelineInfo.layout = pipelineLayout;
         pipelineInfo.renderPass = VulkanEngine::GetRenderPass();
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.pDepthStencilState = &depthStencil;
 
-        if (vkCreateGraphicsPipelines(VulkanEngine::GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS)
+        if (vkCreateGraphicsPipelines(VulkanEngine::GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
-
+        return {
+            pipelineLayout,
+            graphicsPipeline
+        };
 	}
 }

@@ -12,8 +12,8 @@
 
 namespace CHIKU
 {
-	std::map<MaterialPresets, VkDescriptorSetLayout> Material::m_DescriptorSetLayouts;
-	std::map<MaterialPresets, VkDescriptorPool> Material::m_DescriptorPools;
+	std::map<MaterialPresets, VkDescriptorSetLayout> Material::sm_DescriptorSetLayouts;
+	std::map<MaterialPresets, VkDescriptorPool> Material::sm_DescriptorPools;
 
 	ShaderID Material::GetMaterialShader(MaterialPresets presets)
 	{
@@ -28,9 +28,9 @@ namespace CHIKU
 
 	VkDescriptorSetLayout Material::GetOrBuildDescriptorLayout(MaterialPresets presets)
 	{
-		if (m_DescriptorSetLayouts.find(presets) != m_DescriptorSetLayouts.end())
+		if (sm_DescriptorSetLayouts.find(presets) != sm_DescriptorSetLayouts.end())
 		{
-			return m_DescriptorSetLayouts[presets];
+			return sm_DescriptorSetLayouts[presets];
 		}
 		return CreateDescriptorSetLayout(presets);
 	}
@@ -49,9 +49,9 @@ namespace CHIKU
 		layoutInfo.bindingCount = 1;
 		layoutInfo.pBindings = &uboLayoutBinding;
 
-		m_DescriptorSetLayouts[presets] = nullptr;
+		sm_DescriptorSetLayouts[presets] = nullptr;
 
-		if (vkCreateDescriptorSetLayout(VulkanEngine::GetDevice(), &layoutInfo, nullptr, &m_DescriptorSetLayouts[presets]) != VK_SUCCESS)
+		if (vkCreateDescriptorSetLayout(VulkanEngine::GetDevice(), &layoutInfo, nullptr, &sm_DescriptorSetLayouts[presets]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
@@ -69,9 +69,9 @@ namespace CHIKU
 		poolInfo.pPoolSizes = &poolSizes;
 		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-		m_DescriptorPools[presets] = nullptr;
+		sm_DescriptorPools[presets] = nullptr;
 
-		if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &m_DescriptorPools[presets]) != VK_SUCCESS)
+		if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &sm_DescriptorPools[presets]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
@@ -79,10 +79,10 @@ namespace CHIKU
 
 	void Material::CreateDescriptorSets()
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayouts[m_Preset]);
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, sm_DescriptorSetLayouts[m_Preset]);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = m_DescriptorPools[m_Preset];
+		allocInfo.descriptorPool = sm_DescriptorPools[m_Preset];
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		allocInfo.pSetLayouts = layouts.data();
 
@@ -97,7 +97,7 @@ namespace CHIKU
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = m_UniformBuffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
+			bufferInfo.range = sizeof(glm::mat4);
 
 			VkWriteDescriptorSet descriptorWrites{};
 
@@ -115,7 +115,7 @@ namespace CHIKU
 
 	void Material::CreateUniformBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+		VkDeviceSize bufferSize = sizeof(glm::mat4);
 		m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 		m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
@@ -142,21 +142,17 @@ namespace CHIKU
 
 	void Material::Update()
 	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800 / (float)600, 0.1f, 10.0f);
+		proj[1][1] *= -1;
 
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		glm::mat4 mvp = proj * view * model;
 
-		UniformBufferObject ubo{};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), 800 / (float)600, 0.1f, 10.0f);
-		ubo.proj[1][1] *= -1;
-
-		memcpy(m_UniformBuffersMapped[VulkanEngine::GetCurrentFrame()], &ubo, sizeof(ubo));
+		memcpy(m_UniformBuffersMapped[VulkanEngine::GetCurrentFrame()], &mvp, sizeof(mvp));
 	}
 
-	void Material::Bind(VkPipelineLayout pipelineLayout)
+	void Material::Bind(VkPipelineLayout pipelineLayout) const
 	{
 		vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &m_DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
 	}
@@ -172,12 +168,12 @@ namespace CHIKU
 
 	void Material::StaticCleanUp()
 	{
-		for (auto& i : m_DescriptorPools)
+		for (auto& i : sm_DescriptorPools)
 		{
 			vkDestroyDescriptorPool(VulkanEngine::GetDevice(), i.second, nullptr);
 		}
 
-		for (auto& i : m_DescriptorSetLayouts)
+		for (auto& i : sm_DescriptorSetLayouts)
 		{
 			vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), i.second, nullptr);
 		}

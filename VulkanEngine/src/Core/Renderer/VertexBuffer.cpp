@@ -4,16 +4,16 @@
 
 namespace CHIKU
 {
+    std::map<VertexLayoutPreset, VertexBuffer::VertexInputDescription> VertexBuffer::sm_VertexInputDescription;
+
     void VertexBuffer::Init()
     {
-        PrepareBindingDescription();
-        PrepareAttributeDescriptions();
+        CreatePresetDescription(VertexLayoutPreset::UnLitMesh);
     }
 
-    void VertexBuffer::SetLayout(VertexBufferLayout layout)
+    void VertexBuffer::SetLayout(VertexLayoutPreset layout)
     {
-        m_BufferLayout = layout; 
-        Utils::FinalizeLayout(m_BufferLayout);
+        m_Layout = layout;
     }
 
     void VertexBuffer::CreateVertexBuffer(const std::vector<uint8_t>& vertices)
@@ -55,28 +55,85 @@ namespace CHIKU
         vkFreeMemory(VulkanEngine::GetDevice(), m_VertexBufferMemory, nullptr);
     }
 
-    void VertexBuffer::PrepareBindingDescription()
+    VertexBufferLayout VertexBuffer::GetVertexBufferLayout(VertexLayoutPreset layout)
     {
-        m_BindingDescription.binding = m_Binding;
-        m_BindingDescription.stride = m_BufferLayout.Stride;
-        m_BindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        switch (layout)
+        {
+        case CHIKU::VertexLayoutPreset::StaticMesh:
+            return {
+                        {
+                            {"inPosition",VertexAttributeType::Vec3},
+                            {"inColor",VertexAttributeType::Vec3}
+                        }
+            };
+        case CHIKU::VertexLayoutPreset::SkinnedMesh:
+            return {
+                        {
+                            {"inPosition",VertexAttributeType::Vec3},
+                            {"inColor",VertexAttributeType::Vec3}
+                        }
+            };
+        case CHIKU::VertexLayoutPreset::LitMesh:
+            return {
+                        {
+                            {"inPosition",VertexAttributeType::Vec3},
+                            {"inColor",VertexAttributeType::Vec3}
+                        }
+            };
+        case CHIKU::VertexLayoutPreset::ColoredMesh:
+            return {
+                        {
+                            {"inPosition",VertexAttributeType::Vec3},
+                            {"inColor",VertexAttributeType::Vec3}
+                        }
+            };        case CHIKU::VertexLayoutPreset::DebugLine:
+        case CHIKU::VertexLayoutPreset::PointCloud:
+            return {
+                        {
+                            {"inPosition",VertexAttributeType::Vec3},
+                            {"inColor",VertexAttributeType::Vec3}
+                        }
+            };        case CHIKU::VertexLayoutPreset::Custom:
+        default:
+            return {
+                        {
+                            {"inPosition",VertexAttributeType::Vec3},
+                            {"inColor",VertexAttributeType::Vec3}
+                        }
+            };
+        }
     }
 
-    void VertexBuffer::PrepareAttributeDescriptions()
+    void VertexBuffer::CreatePresetDescription(VertexLayoutPreset preset)
     {
-        if (m_BufferLayout.VertexElements.size() == 0)
+        if (sm_VertexInputDescription.find(preset) != sm_VertexInputDescription.end())
         {
-            throw std::runtime_error("Vertex Elements count is 0");
+            throw std::runtime_error("preset description already created");
         }
 
-        m_AttributeDescriptions.resize(m_BufferLayout.VertexElements.size());
+        VertexBufferLayout bufferLayout = GetVertexBufferLayout(preset);
+        Utils::FinalizeLayout(bufferLayout);
+        PrepareBindingDescription(preset, bufferLayout);
+        PrepareAttributeDescriptions(preset, bufferLayout);
+    }
 
-        for (int i = 0; i < m_AttributeDescriptions.size(); i++)
+    void VertexBuffer::PrepareBindingDescription(VertexLayoutPreset layout, const VertexBufferLayout& bufferLayout)
+    {
+        sm_VertexInputDescription[layout].BindingDescription.binding = 0;
+        sm_VertexInputDescription[layout].BindingDescription.stride = bufferLayout.Stride;
+        sm_VertexInputDescription[layout].BindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    }
+
+    void VertexBuffer::PrepareAttributeDescriptions(VertexLayoutPreset layout,const VertexBufferLayout& bufferLayout)
+    {
+        sm_VertexInputDescription[layout].AttributeDescription.resize(bufferLayout.VertexElements.size());
+
+        for (int i = 0; i < sm_VertexInputDescription[layout].AttributeDescription.size(); i++)
         {
-            m_AttributeDescriptions[i].binding = m_Binding;
-            m_AttributeDescriptions[i].location = i;
-            m_AttributeDescriptions[i].format = VK_FORMAT_R32G32B32_SFLOAT;
-            m_AttributeDescriptions[i].offset = m_BufferLayout.VertexElements[i].Offset;
+            sm_VertexInputDescription[layout].AttributeDescription[i].binding = 0;
+            sm_VertexInputDescription[layout].AttributeDescription[i].location = i;
+            sm_VertexInputDescription[layout].AttributeDescription[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+            sm_VertexInputDescription[layout].AttributeDescription[i].offset = bufferLayout.VertexElements[i].Offset;
         }
     }
 }

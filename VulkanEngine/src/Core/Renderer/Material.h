@@ -14,12 +14,6 @@ namespace CHIKU
 	class Material
 	{
 	public:
-		struct UniformBufferObject
-		{
-			glm::mat4 model;
-			glm::mat4 view;
-			glm::mat4 proj;
-		};
 
 		void CreateMaterial(MaterialPresets presets);
 		inline VkDescriptorSetLayout GetDescriptorLayout() const { return GetOrBuildDescriptorLayout(m_Preset); }
@@ -27,7 +21,7 @@ namespace CHIKU
 		inline ShaderID GetShaderID() const { return m_ShaderID; }
 
 		void Update();
-		void Bind(VkPipelineLayout pipelineLayout);
+		void Bind(VkPipelineLayout pipelineLayout) const;
 		void CleanUp();
 		static void StaticCleanUp();
 
@@ -45,8 +39,8 @@ namespace CHIKU
 		MaterialPresets m_Preset;
 		ShaderID m_ShaderID;
 
-		static std::map<MaterialPresets, VkDescriptorSetLayout> m_DescriptorSetLayouts;
-		static std::map<MaterialPresets, VkDescriptorPool> m_DescriptorPools;
+		static std::map<MaterialPresets, VkDescriptorSetLayout> sm_DescriptorSetLayouts;
+		static std::map<MaterialPresets, VkDescriptorPool> sm_DescriptorPools;
 
 		std::vector<VkBuffer> m_UniformBuffers;
 		std::vector<VkDeviceMemory> m_UniformBuffersMemory;

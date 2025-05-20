@@ -46,6 +46,7 @@ namespace CHIKU
     enum class VertexLayoutPreset {
         StaticMesh,     // position, normal, uv
         SkinnedMesh,    // position, normal, uv, boneIDs, weights
+        UnLitMesh,
         LitMesh,        // position, normal, uv, tangent
         ColoredMesh,    // position, color
         DebugLine,      // position, color (for line rendering or gizmos)
@@ -69,29 +70,39 @@ namespace CHIKU
 	class VertexBuffer
 	{
     public:
-        void Init();
-        void SetLayout(VertexBufferLayout layout);
+        struct VertexInputDescription
+        {
+            VkVertexInputBindingDescription BindingDescription;
+            std::vector<VkVertexInputAttributeDescription> AttributeDescription;
+        };
+
+        static void Init();
+        void SetLayout(VertexLayoutPreset layout);
         void SetBinding(uint32_t binding) { m_Binding = binding; }
         void CreateVertexBuffer(const std::vector<uint8_t>& vertices);
 
-        inline VkVertexInputBindingDescription GetBindingDescription() const { return m_BindingDescription; }
-        inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() const { return m_AttributeDescriptions; }
-        void Bind(VkCommandBuffer commandBuffer) const;
+        VertexInputDescription GetBufferDescription() const { return sm_VertexInputDescription.at(m_Layout); }
+        static inline VkVertexInputBindingDescription GetBindingDescription(VertexLayoutPreset preset) { return sm_VertexInputDescription.at(preset).BindingDescription; }
+        static inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(VertexLayoutPreset preset) { return sm_VertexInputDescription.at(preset).AttributeDescription; }
 
+        VertexLayoutPreset GetBufferLayout() const noexcept { return m_Layout; }
+        void Bind(VkCommandBuffer commandBuffer) const;
         void CleanUp();
 
     private:
-        void PrepareBindingDescription();
-        void PrepareAttributeDescriptions();
+        static VertexBufferLayout GetVertexBufferLayout(VertexLayoutPreset layout);
+        static void CreatePresetDescription(VertexLayoutPreset preset);
+        static void PrepareBindingDescription(VertexLayoutPreset layout, const VertexBufferLayout& bufferLayout);
+        static void PrepareAttributeDescriptions(VertexLayoutPreset layout, const VertexBufferLayout& bufferLayout);
 
     private:
         uint32_t m_Binding = 0;
-        VkVertexInputBindingDescription m_BindingDescription{};
-        std::vector<VkVertexInputAttributeDescription> m_AttributeDescriptions{};
+
+        static std::map<VertexLayoutPreset, VertexInputDescription> sm_VertexInputDescription;
 
         VkBuffer m_VertexBuffer;
         VkDeviceMemory m_VertexBufferMemory;
 
-        VertexBufferLayout m_BufferLayout;
+        VertexLayoutPreset m_Layout;
 	};
 }

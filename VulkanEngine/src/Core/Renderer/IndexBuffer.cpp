@@ -6,7 +6,8 @@ namespace CHIKU
 {
     void IndexBuffer::CreateIndexBuffer(const std::vector<uint32_t>& indices)
     {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        count = indices.size();
+        VkDeviceSize bufferSize = sizeof(indices[0]) * count;
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
