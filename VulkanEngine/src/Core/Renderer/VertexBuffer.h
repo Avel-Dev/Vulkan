@@ -86,7 +86,7 @@ namespace CHIKU
         static inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(VertexLayoutPreset preset) { return sm_VertexInputDescription.at(preset).AttributeDescription; }
 
         VertexLayoutPreset GetBufferLayout() const noexcept { return m_Layout; }
-        void Bind(VkCommandBuffer commandBuffer) const;
+        void Bind() const;
         void CleanUp();
 
     private:

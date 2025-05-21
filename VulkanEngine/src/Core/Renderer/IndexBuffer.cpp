@@ -26,9 +26,9 @@ namespace CHIKU
         vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
     }
 
-    void IndexBuffer::Bind(VkCommandBuffer commandBuffer)
+    void IndexBuffer::Bind()
     {
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(VulkanEngine::GetCommandBuffer(), m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
     void IndexBuffer::CleanUp()

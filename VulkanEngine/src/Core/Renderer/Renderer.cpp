@@ -66,12 +66,16 @@ namespace CHIKU
 	{
         m_Material.Update();
 		m_GraphicsPipeline.Bind(m_Material,m_VertexBuffer);
-        m_IndexBuffer.Bind(VulkanEngine::GetCommandBuffer());
+        m_IndexBuffer.Bind();
 		vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),36, 1, 0, 0, 0);
 	}
 
 	void Renderer::CleanUp()
 	{
+        m_Material.CleanUp();
+        m_VertexBuffer.CleanUp();
+        m_IndexBuffer.CleanUp();
+
 		ShaderManager::Cleanup();
 		Material::StaticCleanUp();
 

@@ -1,6 +1,7 @@
 #include "Material.h"
 #include "VulkanEngine/VulkanEngine.h"
 #include "BufferUtils.h"
+#include "Windows.h"
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -142,9 +143,15 @@ namespace CHIKU
 
 	void Material::Update()
 	{
-		glm::mat4 model = glm::mat4(1.0f);
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+		glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800 / (float)600, 0.1f, 10.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float) Window::WIDTH / (float) Window::HEIGHT, 0.1f, 10.0f);
+
 		proj[1][1] *= -1;
 
 		glm::mat4 mvp = proj * view * model;

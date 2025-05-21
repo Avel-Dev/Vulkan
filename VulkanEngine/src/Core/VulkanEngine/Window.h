@@ -6,6 +6,10 @@ namespace CHIKU
 	class Window
 	{
 	public:
+		static uint32_t WIDTH;
+		static uint32_t HEIGHT;
+
+	public:
 		void Init();
 
 		inline GLFWwindow* GetWindow() { return m_Window; }
@@ -17,7 +21,5 @@ namespace CHIKU
 
 	private:
 		GLFWwindow* m_Window;
-		uint32_t WIDTH = 800;
-		uint32_t HEIGHT = 600;
 	};
 }

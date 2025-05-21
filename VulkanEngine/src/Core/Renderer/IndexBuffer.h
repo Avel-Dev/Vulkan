@@ -7,7 +7,7 @@ namespace CHIKU
 	{
     public:
         void CreateIndexBuffer(const std::vector<uint32_t>& indices);
-        void Bind(VkCommandBuffer commandBuffer);
+        void Bind();
 
         uint32_t GetCount() const { return count; }
         void CleanUp();

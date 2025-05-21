@@ -2,6 +2,9 @@
 
 namespace CHIKU
 {
+	uint32_t Window::WIDTH = 1280;
+	uint32_t Window::HEIGHT = 720;
+
 	void Window::Init()
 	{
 		InitWindow();

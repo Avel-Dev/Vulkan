@@ -27,7 +27,7 @@ namespace CHIKU
         vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, sm_GrphicsPipeline.at(key).GraphicsPipeline);
 
         material.Bind(sm_GrphicsPipeline.at(key).PipelineLayout);
-        vertexbuffer.Bind(VulkanEngine::GetCommandBuffer());
+        vertexbuffer.Bind();
     }
 
     void GraphicsPipeline::CleanUp()
