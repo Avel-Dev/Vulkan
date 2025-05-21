@@ -1,7 +1,7 @@
 #include "Material.h"
 #include "VulkanEngine/VulkanEngine.h"
 #include "BufferUtils.h"
-#include "Windows.h"
+#include "VulkanEngine/Window.h"
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
