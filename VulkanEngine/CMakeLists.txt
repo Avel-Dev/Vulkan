@@ -1,5 +1,9 @@
 ﻿set(CMAKE_CXX_STANDARD 17)
 
+if(UNIX AND NOT APPLE)
+    add_compile_options(-march=x86-64 -mtune=generic -O2)
+endif()
+
 add_subdirectory("vendor/glfw")
 add_subdirectory("vendor/glm")
 
@@ -7,6 +11,8 @@ include_directories("vendor/glfw/include")
 include_directories("vendor/glm")
 include_directories("vendor/stb_image")
 include_directories("vendor/tinyobjloader")
+include_directories("vendor/json_nlohmann")
+include_directories("vendor/spirv_reflect")
 include_directories("src/")
 include_directories("src/Core/")
 

@@ -16,15 +16,15 @@ namespace CHIKU
 	std::map<MaterialPresets, VkDescriptorSetLayout> Material::sm_DescriptorSetLayouts;
 	std::map<MaterialPresets, VkDescriptorPool> Material::sm_DescriptorPools;
 
-	ShaderID Material::GetMaterialShader(MaterialPresets presets)
+	std::string Material::GetMaterialShader(MaterialPresets presets)
 	{
 		switch (presets)
 		{
-		case CHIKU::Lit: return ShaderID::Basic;
-		case CHIKU::Unlit: return ShaderID::Basic;
+		case CHIKU::Lit: return "default/lit";
+		case CHIKU::Unlit: return "default/unlit";
 		}
 
-		return ShaderID::Basic;
+		return "default/unlit";
 	}
 
 	VkDescriptorSetLayout Material::GetOrBuildDescriptorLayout(MaterialPresets presets)
@@ -56,10 +56,17 @@ namespace CHIKU
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
+
+		return sm_DescriptorSetLayouts[presets];
 	}
 
 	VkDescriptorPool Material::CreateDescriptorPool(MaterialPresets presets)
 	{
+		if (sm_DescriptorPools.find(presets) != sm_DescriptorPools.end())
+		{
+			return sm_DescriptorPools[presets];
+		}
+
 		VkDescriptorPoolSize poolSizes{};
 		poolSizes.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
@@ -76,6 +83,8 @@ namespace CHIKU
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
+
+		return sm_DescriptorPools[presets];
 	}
 
 	void Material::CreateDescriptorSets()
@@ -135,8 +144,8 @@ namespace CHIKU
 	{
 		m_Preset = presets;
 		m_ShaderID = GetMaterialShader(m_Preset);
-		m_MaterialLayout = Material::GetOrBuildDescriptorLayout(m_Preset);
-		m_MaterialMemoryPool = Material::CreateDescriptorPool(m_Preset);
+		Material::GetOrBuildDescriptorLayout(m_Preset);
+		Material::CreateDescriptorPool(m_Preset);
 		CreateUniformBuffer();
 		CreateDescriptorSets();
 	}

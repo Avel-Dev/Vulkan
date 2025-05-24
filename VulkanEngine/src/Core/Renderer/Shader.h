@@ -1,31 +1,33 @@
 #pragma once
 #include "VulkanHeader.h"
-#include <unordered_map>
+#include "VertexBuffer.h"
+#include <variant>
+#include <filesystem>
 
 namespace CHIKU
 {
-
-    enum class ShaderID {
-        Basic,
-        Phong,
-        PBR,
-        Shadow,
-        Skybox,
-        COUNT
-    };
-
     class ShaderManager 
     {
     public:
+        enum class ShaderStages
+        {
+            Vertex,
+            Tessellation,
+            Geometry,
+            Fragment,
+            Compute
+        };
+
         ~ShaderManager();
 
         static void Init();
 
-        static bool LoadShader(ShaderID ID, const std::string& vertPath, const std::string& fragPath);
-        static const std::vector<VkPipelineShaderStageCreateInfo>& GetShaderStages(ShaderID ID) ;
+        static bool CreateShaderProgram(const std::filesystem::path& ID);
+        static const std::vector<VkPipelineShaderStageCreateInfo>& GetShaderStages(const std::filesystem::path& ID) ;
         static void Cleanup();
 
     private:
+        static bool GetShaderPath(const std::filesystem::path& ID, std::vector<std::string>& shaderPaths);
         static bool CreateSPIRV(const std::string& a_ShaderPath, const std::string& a_OutPutPath);
         static VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -33,11 +35,10 @@ namespace CHIKU
 
         struct ShaderProgram 
         {
-            VkShaderModule vertModule;
-            VkShaderModule fragModule;
-            std::vector<VkPipelineShaderStageCreateInfo> stages;
+            std::map<ShaderStages, VkShaderModule> ShaderModules{};
+            std::vector<VkPipelineShaderStageCreateInfo> Stages{};
         };
 
-        static std::unordered_map<ShaderID, ShaderProgram> sm_ShaderPrograms;
+        static std::unordered_map<std::string, ShaderProgram> sm_ShaderPrograms;
     };
 }

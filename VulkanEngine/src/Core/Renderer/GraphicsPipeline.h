@@ -10,7 +10,7 @@ namespace CHIKU
 {
 	struct PipelineKey
 	{
-		ShaderID shaderID;
+		std::string shaderID;
 		VertexLayoutPreset inputDescription;
 		MaterialPresets materialPreset;
 
@@ -47,15 +47,6 @@ namespace CHIKU
 namespace std 
 {
 	template <>
-	struct hash<CHIKU::ShaderID> 
-	{
-		size_t operator()(const CHIKU::ShaderID& id) const noexcept 
-		{
-			return static_cast<size_t>(id);
-		}
-	};
-
-	template <>
 	struct hash<CHIKU::VertexLayoutPreset> 
 	{
 		size_t operator()(const CHIKU::VertexLayoutPreset& layout) const noexcept 
@@ -85,7 +76,7 @@ namespace std
 				seed ^= val + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 				};
 
-			hash_combine(h, std::hash<CHIKU::ShaderID>{}(key.shaderID));
+			hash_combine(h, std::hash<std::string>{}(key.shaderID));
 			hash_combine(h, std::hash<CHIKU::VertexLayoutPreset>{}(key.inputDescription));
 			hash_combine(h, std::hash<CHIKU::MaterialPresets>{}(key.materialPreset));
 			return h;

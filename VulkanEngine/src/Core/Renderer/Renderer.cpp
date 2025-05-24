@@ -28,7 +28,7 @@ namespace CHIKU
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "C:/dev/box.obj"))
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, (SOURCE_DIR + "models/viking_room.obj").c_str()))
         {
             throw std::runtime_error(warn + err);
         }
@@ -67,7 +67,7 @@ namespace CHIKU
         m_Material.Update();
 		m_GraphicsPipeline.Bind(m_Material,m_VertexBuffer);
         m_IndexBuffer.Bind();
-		vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),36, 1, 0, 0, 0);
+		vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),m_IndexBuffer.GetCount(), 1, 0, 0, 0);
 	}
 
 	void Renderer::CleanUp()

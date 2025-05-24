@@ -46,7 +46,7 @@ namespace CHIKU
         if (sm_GrphicsPipeline.find(key) == sm_GrphicsPipeline.end())
         {
             sm_GrphicsPipeline[key] = CreateGraphicsPipeline(
-                ShaderManager::GetShaderStages(material.GetShaderID()).data(), 
+                ShaderManager::GetShaderStages(material.GetShaderID()).data(),
                 vertexBuffer.GetBufferDescription(), 
                 material.GetDescriptorLayout()
             );
@@ -84,7 +84,7 @@ namespace CHIKU
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
         rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
