@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "VulkanEngine/VulkanEngine.h"
 #include "Shader.h"
+#include "UniformBuffer.h"
 #include <tiny_obj_loader.h>
 #include <fstream>
 #include <iostream>
@@ -13,6 +14,7 @@ namespace CHIKU
 	{
 		VertexBuffer::Init();
 		ShaderManager::Init();
+        UniformBuffer::Init();
 		m_GraphicsPipeline.Init();
 
 		m_Material.CreateMaterial(MaterialPresets::Unlit);
@@ -64,7 +66,7 @@ namespace CHIKU
 
 	void Renderer::Draw()
 	{
-        m_Material.Update();
+
 		m_GraphicsPipeline.Bind(m_Material,m_VertexBuffer);
         m_IndexBuffer.Bind();
 		vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),m_IndexBuffer.GetCount(), 1, 0, 0, 0);
@@ -76,8 +78,8 @@ namespace CHIKU
         m_VertexBuffer.CleanUp();
         m_IndexBuffer.CleanUp();
 
+        UniformBuffer::CleanUp();
 		ShaderManager::Cleanup();
-		Material::StaticCleanUp();
 
 		m_GraphicsPipeline.CleanUp();
 	}

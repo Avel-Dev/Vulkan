@@ -3,6 +3,7 @@
 #include "VertexBuffer.h"
 #include "Shader.h"
 
+
 namespace CHIKU
 {
 	enum MaterialPresets
@@ -16,36 +17,19 @@ namespace CHIKU
 	public:
 
 		void CreateMaterial(MaterialPresets presets);
-		inline VkDescriptorSetLayout GetDescriptorLayout() const { return GetOrBuildDescriptorLayout(m_Preset); }
 		inline MaterialPresets GetMaterialType() const { return m_Preset; }
 		inline std::string GetShaderID() const { return m_ShaderID; }
 
-		void Update();
 		void Bind(VkPipelineLayout pipelineLayout) const;
-		void CleanUp();
-		static void StaticCleanUp();
+		void CleanUp() {}
 
 	private:
-		static VkDescriptorSetLayout GetOrBuildDescriptorLayout(MaterialPresets presets);
-		static VkDescriptorSetLayout CreateDescriptorSetLayout(MaterialPresets presets);
-		static VkDescriptorPool CreateDescriptorPool(MaterialPresets presets);
-
 		std::string GetMaterialShader(MaterialPresets presets);
 
-		void CreateDescriptorSets();
-		void CreateUniformBuffer();
 	private:
 
 		MaterialPresets m_Preset;
 		std::string m_ShaderID;
-
-		static std::map<MaterialPresets, VkDescriptorSetLayout> sm_DescriptorSetLayouts;
-		static std::map<MaterialPresets, VkDescriptorPool> sm_DescriptorPools;
-
-		std::vector<VkBuffer> m_UniformBuffers;
-		std::vector<VkDeviceMemory> m_UniformBuffersMemory;
-		std::vector<void*> m_UniformBuffersMapped;
-		std::vector<VkDescriptorSet> m_DescriptorSets;
 	};
 
 }

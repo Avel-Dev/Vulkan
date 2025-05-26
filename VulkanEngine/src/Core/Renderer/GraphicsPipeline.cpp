@@ -4,7 +4,7 @@
 #include "Shader.h"
 #include <chrono>
 #include <array>
-
+#include "UniformBuffer.h"
 
 namespace CHIKU
 {
@@ -16,6 +16,7 @@ namespace CHIKU
 
     void GraphicsPipeline::Bind(const Material& material, const VertexBuffer& vertexbuffer)
     {
+
         PipelineKey key = {
            material.GetShaderID(),
            vertexbuffer.GetBufferLayout(),
@@ -24,6 +25,8 @@ namespace CHIKU
 
         GetOrCreateGraphicsPipeline(key, material, vertexbuffer);
 
+        UniformBuffer::Update();
+        UniformBuffer::Bind(sm_GrphicsPipeline.at(key).PipelineLayout);
         vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, sm_GrphicsPipeline.at(key).GraphicsPipeline);
 
         material.Bind(sm_GrphicsPipeline.at(key).PipelineLayout);
@@ -47,8 +50,8 @@ namespace CHIKU
         {
             sm_GrphicsPipeline[key] = CreateGraphicsPipeline(
                 ShaderManager::GetShaderStages(material.GetShaderID()).data(),
-                vertexBuffer.GetBufferDescription(), 
-                material.GetDescriptorLayout()
+                vertexBuffer.GetBufferDescription(),
+                UniformBuffer::GetDescriptorSetLayout(UniformBuffer::GenericUniformBuffers::VP)
             );
         }
 

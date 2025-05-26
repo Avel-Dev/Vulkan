@@ -26,4 +26,5 @@
 #include <map>
 #include <set>
 #include <cstring>
+#include <array>
 #include <unordered_map>
