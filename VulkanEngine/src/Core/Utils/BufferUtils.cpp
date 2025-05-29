@@ -1,6 +1,6 @@
 #include "BufferUtils.h"
 #include "VulkanEngine/VulkanEngine.h"
-#include "VulkanEngine/EngineUtility.h"
+#include "Utils/EngineUtility.h"
 
 namespace CHIKU
 {

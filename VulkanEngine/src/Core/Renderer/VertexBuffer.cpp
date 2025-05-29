@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 #include "VulkanEngine/VulkanEngine.h"
-#include "BufferUtils.h"
+#include "Utils/BufferUtils.h"
 
 namespace CHIKU
 {
@@ -98,7 +98,8 @@ namespace CHIKU
             return {
                         {
                             {"inPosition",VertexAttributeType::Vec3},
-                            {"inColor",VertexAttributeType::Vec3}
+                            {"inColor",VertexAttributeType::Vec3},
+                            {"inTexCoord",VertexAttributeType::Vec3}
                         }
             };
         }

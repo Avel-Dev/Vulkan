@@ -1,6 +1,6 @@
 #include "Material.h"
 #include "VulkanEngine/VulkanEngine.h"
-#include "BufferUtils.h"
+#include "Utils/BufferUtils.h"
 #include "VulkanEngine/Window.h"
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

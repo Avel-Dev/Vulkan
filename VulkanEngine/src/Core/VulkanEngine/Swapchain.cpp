@@ -1,6 +1,6 @@
 #include "Swapchain.h"
-#include "EngineUtility.h"
-#include "ImageUtils.h"
+#include "Utils/EngineUtility.h"
+#include "Utils/ImageUtils.h"
 #include <algorithm>
 #include <array>
 
@@ -68,15 +68,18 @@ namespace CHIKU
     {
         VkFormat depthFormat = FindDepthFormat(physicalDevice);
 
-        ImageUtils::CreateImage(physicalDevice, m_LogicalDevice,m_SwapChainExtent.width, m_SwapChainExtent.height, depthFormat,
+        Utils::CreateImage(
+            m_SwapChainExtent.width, 
+            m_SwapChainExtent.height, 
+            depthFormat,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             m_DepthImage,
             m_DepthImageMemory);
 
-        m_DepthImageView = ImageUtils::CreateImageView(m_LogicalDevice,m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-        ImageUtils::TransitionImageLayout(m_DepthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        m_DepthImageView = Utils::CreateImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        Utils::TransitionImageLayout(m_DepthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
     VkResult Swapchain::AcquireNextImageInSwapchain(const VkDevice& device, const VkSemaphore& semaphore, uint32_t* pImageIndex)
@@ -248,7 +251,7 @@ namespace CHIKU
         m_SwapChainImageViews.resize(m_SwapChainImages.size());
         for (size_t i = 0; i < m_SwapChainImages.size(); i++)
         {
-            m_SwapChainImageViews[i] = ImageUtils::CreateImageView(m_LogicalDevice,m_SwapChainImages[i], m_SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+            m_SwapChainImageViews[i] = Utils::CreateImageView(m_SwapChainImages[i], m_SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
         }
     }
 
@@ -262,7 +265,6 @@ namespace CHIKU
                 m_SwapChainImageViews[i],
                 m_DepthImageView
             };
-
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

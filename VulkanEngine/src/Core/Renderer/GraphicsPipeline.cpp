@@ -1,6 +1,6 @@
 #include "GraphicsPipeline.h"
 #include "VulkanEngine/VulkanEngine.h"
-#include "BufferUtils.h"
+#include "Utils/BufferUtils.h"
 #include "Shader.h"
 #include <chrono>
 #include <array>
@@ -16,7 +16,6 @@ namespace CHIKU
 
     void GraphicsPipeline::Bind(const Material& material, const VertexBuffer& vertexbuffer)
     {
-
         PipelineKey key = {
            material.GetShaderID(),
            vertexbuffer.GetBufferLayout(),
@@ -51,7 +50,7 @@ namespace CHIKU
             sm_GrphicsPipeline[key] = CreateGraphicsPipeline(
                 ShaderManager::GetShaderStages(material.GetShaderID()).data(),
                 vertexBuffer.GetBufferDescription(),
-                UniformBuffer::GetDescriptorSetLayout(UniformBuffer::GenericUniformBuffers::VP)
+                UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::MVP)
             );
         }
 

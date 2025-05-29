@@ -16,15 +16,15 @@ namespace CHIKU
 		void CleanUp();
 		void Wait();
 
-		static const inline uint32_t GetCurrentFrame() { return s_Instance->m_CurrentFrame; }
-		static const inline VkCommandBuffer GetCommandBuffer() { return s_Instance->m_Commands.GetCommandBuffer(s_Instance->m_CurrentFrame); }
-		static const inline void BeginFrame() { s_Instance->PrivateBeginFrame(); }
-		static const inline void EndFrame() { s_Instance->PrivateEndFrame(); }
-		static const inline VkRenderPass& GetRenderPass() { return s_Instance->m_Swapchain.GetRenderPass(); }
-		static const inline VkPhysicalDevice& GetPhysicalDevice() { return s_Instance->m_PhysicalDevice; }
-		static const inline VkDevice& GetDevice() { return s_Instance->m_LogicalDevice; }
-		static const inline VkCommandBuffer BeginRecordingSingleTimeCommands() { return s_Instance->BeginSingleTimeCommands(); }
-		static const inline void EndRecordingSingleTimeCommands(VkCommandBuffer commandBuffer) { return s_Instance->EndSingleTimeCommands(commandBuffer); }
+		static const inline  uint32_t GetCurrentFrame() noexcept { return s_Instance->m_CurrentFrame; }
+		static const inline  VkCommandBuffer GetCommandBuffer() noexcept { return s_Instance->m_Commands.GetCommandBuffer(s_Instance->m_CurrentFrame); }
+		static const inline  void BeginFrame() noexcept { s_Instance->PrivateBeginFrame(); }
+		static const inline  void EndFrame() noexcept { s_Instance->PrivateEndFrame(); }
+		static const inline  VkRenderPass& GetRenderPass() noexcept { return s_Instance->m_Swapchain.GetRenderPass(); }
+		static const inline  VkPhysicalDevice& GetPhysicalDevice() noexcept { return s_Instance->m_PhysicalDevice; }
+		static const inline  VkDevice& GetDevice() noexcept { return s_Instance->m_LogicalDevice; }
+		static const inline  VkCommandBuffer BeginRecordingSingleTimeCommands() noexcept { return s_Instance->BeginSingleTimeCommands(); }
+		static const inline  void EndRecordingSingleTimeCommands(VkCommandBuffer commandBuffer) noexcept { return s_Instance->EndSingleTimeCommands(commandBuffer); }
 
 	private:
 		void PrivateBeginFrame();

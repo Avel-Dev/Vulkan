@@ -1,12 +1,12 @@
 #include "IndexBuffer.h"
 #include "VulkanEngine/VulkanEngine.h"
-#include "BufferUtils.h"
+#include "Utils/BufferUtils.h"
 
 namespace CHIKU
 {
     void IndexBuffer::CreateIndexBuffer(const std::vector<uint32_t>& indices)
     {
-        count = indices.size();
+        count = (uint32_t)indices.size();
         VkDeviceSize bufferSize = sizeof(indices[0]) * count;
 
         VkBuffer stagingBuffer;

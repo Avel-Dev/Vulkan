@@ -46,9 +46,14 @@ namespace CHIKU
                 };
 
                 glm::vec3 color = { 1.0f, 1.0f, 1.0f };
+                glm::vec3 texCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
+                    1.0f };
 
                 data.emplace_back(position);
                 data.emplace_back(color);
+                data.emplace_back(texCoord);
 
                 indices.push_back((uint32_t)indices.size());
             }
