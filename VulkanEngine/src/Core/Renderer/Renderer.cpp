@@ -12,17 +12,21 @@ namespace CHIKU
 
 	void Renderer::Init()
 	{
+        ZoneScoped;
+
 		VertexBuffer::Init();
 		ShaderManager::Init();
         UniformBuffer::Init();
 		m_GraphicsPipeline.Init();
 
-		m_Material.CreateMaterial(MaterialPresets::Unlit);
+        m_Material.CreateMaterial(MaterialPresets::Unlit);
 		LoadModel();
 	}
 
     void Renderer::LoadModel()
     {
+        ZoneScoped;
+
         std::vector<uint32_t> indices;
         std::vector<glm::vec3> data;
         tinyobj::attrib_t attrib;
@@ -45,14 +49,12 @@ namespace CHIKU
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
 
-                glm::vec3 color = { 1.0f, 1.0f, 1.0f };
                 glm::vec3 texCoord = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
                     1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
                     1.0f };
 
                 data.emplace_back(position);
-                data.emplace_back(color);
                 data.emplace_back(texCoord);
 
                 indices.push_back((uint32_t)indices.size());
@@ -71,6 +73,7 @@ namespace CHIKU
 
 	void Renderer::Draw()
 	{
+        ZoneScoped;
 
 		m_GraphicsPipeline.Bind(m_Material,m_VertexBuffer);
         m_IndexBuffer.Bind();
@@ -79,6 +82,8 @@ namespace CHIKU
 
 	void Renderer::CleanUp()
 	{
+        ZoneScoped;
+
         m_Material.CleanUp();
         m_VertexBuffer.CleanUp();
         m_IndexBuffer.CleanUp();

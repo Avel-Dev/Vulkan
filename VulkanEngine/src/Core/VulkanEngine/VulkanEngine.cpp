@@ -10,6 +10,8 @@ namespace CHIKU
 
 	VulkanEngine::VulkanEngine()
 	{
+		ZoneScoped;
+
 		if (s_Instance == nullptr)
 		{
 			s_Instance = this;
@@ -32,6 +34,8 @@ namespace CHIKU
 
 	void VulkanEngine::Init(GLFWwindow* window)
 	{
+		ZoneScoped;
+
 		m_Window = window;
 		if (m_Window == nullptr)
 		{
@@ -51,6 +55,8 @@ namespace CHIKU
 
 	void VulkanEngine::CleanUp()
 	{
+		ZoneScoped;
+
 		DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
 
 		for (int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++)
@@ -76,12 +82,16 @@ namespace CHIKU
 
 	void VulkanEngine::Wait()
 	{
+		ZoneScoped;
+
 		vkQueueWaitIdle(m_GraphicsQueue);
 		vkQueueWaitIdle(m_PresentQueue);
 	}
 
 	void VulkanEngine::PrivateBeginFrame()
 	{
+		ZoneScoped;
+
 		vkWaitForFences(m_LogicalDevice, 1, &m_InFlightFence[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
 		VkResult result = m_Swapchain.AcquireNextImageInSwapchain(m_LogicalDevice, m_ImageAvailableSemaphore[m_CurrentFrame],&m_ImageIndex);
@@ -103,6 +113,8 @@ namespace CHIKU
 
 	void VulkanEngine::PrivateEndFrame()
 	{
+		ZoneScoped;
+
 		EndRecordingCommands(m_Commands.GetCommandBuffer(m_CurrentFrame));
 		VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphore[m_CurrentFrame] };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -141,6 +153,8 @@ namespace CHIKU
 
 	void VulkanEngine::BeginRecordingCommands(const VkCommandBuffer& commandBuffer)
 	{
+		ZoneScoped;
+
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = 0; // Optional
@@ -156,6 +170,8 @@ namespace CHIKU
 
 	void VulkanEngine::EndRecordingCommands(const VkCommandBuffer& commandBuffer)
 	{
+		ZoneScoped;
+
 		m_Swapchain.EndRenderPass(commandBuffer);
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -166,6 +182,8 @@ namespace CHIKU
 
 	void VulkanEngine::GetRequiredExtensions()
 	{
+		ZoneScoped;
+
 		uint32_t glfwExtensionCount = 0;
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
@@ -178,12 +196,16 @@ namespace CHIKU
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanEngine::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
+		ZoneScoped;
+
 		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 		return VK_FALSE;
 	}
 
 	void VulkanEngine::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 	{
+		ZoneScoped;
+
 		createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
@@ -197,6 +219,8 @@ namespace CHIKU
 
 	bool VulkanEngine::CheckValidationLayerSupport()
 	{
+		ZoneScoped;
+	
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -227,6 +251,8 @@ namespace CHIKU
 
 	void VulkanEngine::CreateInstance()
 	{
+		ZoneScoped;
+
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "NOGAME";
@@ -265,6 +291,8 @@ namespace CHIKU
 
 	void VulkanEngine::CreateSurface()
 	{
+		ZoneScoped;
+
 		if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create window surface!");
@@ -273,6 +301,8 @@ namespace CHIKU
 
 	void VulkanEngine::CreatePhysicalDevice()
 	{
+		ZoneScoped;
+
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
 
@@ -328,6 +358,8 @@ namespace CHIKU
 		const VkAllocationCallbacks* pAllocator,
 		VkDebugUtilsMessengerEXT* pDebugMessenger)
 	{
+		ZoneScoped;
+
 		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 		if (func != nullptr)
 		{
@@ -343,6 +375,8 @@ namespace CHIKU
 		VkDebugUtilsMessengerEXT debugMessenger, 
 		const VkAllocationCallbacks* pAllocator)
 	{
+		ZoneScoped;
+
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr) {
 			func(instance, debugMessenger, pAllocator);
@@ -351,6 +385,8 @@ namespace CHIKU
 
 	void VulkanEngine::SetupDebugMessenger()
 	{
+		ZoneScoped;
+
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		PopulateDebugMessengerCreateInfo(createInfo);
 
@@ -362,6 +398,8 @@ namespace CHIKU
 
 	void VulkanEngine::CreateLogicalDevice()
 	{
+		ZoneScoped;
+
 #ifdef ENABLE_VALIDATION_LAYERS
 		SetupDebugMessenger();
 #endif
@@ -411,6 +449,8 @@ namespace CHIKU
 
 	void VulkanEngine::CreateSyncObjects()
 	{
+		ZoneScoped;
+
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 

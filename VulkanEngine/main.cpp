@@ -2,6 +2,8 @@
 
 int main()
 {
+	ZoneScoped;    // Profile this block
+
 	CHIKU::Application Application;
 
 	Application.Init();

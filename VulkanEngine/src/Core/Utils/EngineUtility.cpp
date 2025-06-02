@@ -8,6 +8,8 @@ namespace CHIKU
 	{
 		uint32_t FindMemoryType(VkPhysicalDevice physicalDevice,uint32_t typeFilter, VkMemoryPropertyFlags properties)
 		{
+			ZoneScoped;
+
 			VkPhysicalDeviceMemoryProperties memProperties;
 			vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
@@ -23,6 +25,8 @@ namespace CHIKU
 
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
 		{
+			ZoneScoped;
+
 			QueueFamilyIndices indices;
 			uint32_t queueFamilyCount = 0;
 			vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -54,6 +58,8 @@ namespace CHIKU
 
 		int RateDeviceSuitability(VkPhysicalDevice device)
 		{
+			ZoneScoped;
+
 			VkPhysicalDeviceProperties deviceProperties;
 			vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
@@ -81,6 +87,8 @@ namespace CHIKU
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions)
 		{
+			ZoneScoped;
+
 			uint32_t extensionCount;
 			vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -99,6 +107,8 @@ namespace CHIKU
 
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
 		{
+			ZoneScoped;
+
 			SwapChainSupportDetails details;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capabilities);
 
@@ -123,6 +133,8 @@ namespace CHIKU
 
 		bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,const std::vector<const char*>& deviceExtensions)
 		{
+			ZoneScoped;
+
 			QueueFamilyIndices indices = FindQueueFamilies(device, surface);
 
 			bool extensionsSupported = CheckDeviceExtensionSupport(device, deviceExtensions);

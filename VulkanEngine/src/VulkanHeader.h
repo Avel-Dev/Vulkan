@@ -16,6 +16,8 @@
 #define ENABLE_VALIDATION_LAYERS
 
 #define MAX_FRAMES_IN_FLIGHT 3
+#define MAX_DESCRIPTOR_SETS 1000
+#define MAX_DESCRIPTOR_SET_LAYOUTS 1000
 
 #define STR2(x) #x
 #define STR(x) STR2(x)
@@ -28,3 +30,6 @@
 #include <cstring>
 #include <array>
 #include <unordered_map>
+
+#include "tracy/tracy.hpp"
+#include "tracy/tracyC.h"

@@ -8,16 +8,22 @@ namespace CHIKU
 
     void VertexBuffer::Init()
     {
+		ZoneScoped;
+
         CreatePresetDescription(VertexLayoutPreset::UnLitMesh);
     }
 
     void VertexBuffer::SetLayout(VertexLayoutPreset layout)
     {
+        ZoneScoped;
+
         m_Layout = layout;
     }
 
     void VertexBuffer::CreateVertexBuffer(const std::vector<uint8_t>& vertices)
     {
+        ZoneScoped;
+
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
         VkBuffer stagingBuffer;
@@ -44,6 +50,8 @@ namespace CHIKU
 
     void VertexBuffer::Bind() const
     {
+        ZoneScoped;
+
         VkBuffer vertexBuffers[] = { m_VertexBuffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(VulkanEngine::GetCommandBuffer(), 0, 1, vertexBuffers, offsets);
@@ -51,12 +59,16 @@ namespace CHIKU
 
     void VertexBuffer::CleanUp()
     {
+        ZoneScoped;
+
         vkDestroyBuffer(VulkanEngine::GetDevice(), m_VertexBuffer, nullptr);
         vkFreeMemory(VulkanEngine::GetDevice(), m_VertexBufferMemory, nullptr);
     }
 
     VertexBufferLayout VertexBuffer::GetVertexBufferLayout(VertexLayoutPreset layout)
     {
+        ZoneScoped;
+
         switch (layout)
         {
         case CHIKU::VertexLayoutPreset::StaticMesh:
@@ -98,7 +110,6 @@ namespace CHIKU
             return {
                         {
                             {"inPosition",VertexAttributeType::Vec3},
-                            {"inColor",VertexAttributeType::Vec3},
                             {"inTexCoord",VertexAttributeType::Vec3}
                         }
             };
@@ -107,6 +118,8 @@ namespace CHIKU
 
     void VertexBuffer::CreatePresetDescription(VertexLayoutPreset preset)
     {
+        ZoneScoped;
+
         if (sm_VertexInputDescription.find(preset) != sm_VertexInputDescription.end())
         {
             throw std::runtime_error("preset description already created");
@@ -120,6 +133,8 @@ namespace CHIKU
 
     void VertexBuffer::PrepareBindingDescription(VertexLayoutPreset layout, const VertexBufferLayout& bufferLayout)
     {
+        ZoneScoped;
+
         sm_VertexInputDescription[layout].BindingDescription.binding = 0;
         sm_VertexInputDescription[layout].BindingDescription.stride = bufferLayout.Stride;
         sm_VertexInputDescription[layout].BindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -127,6 +142,8 @@ namespace CHIKU
 
     void VertexBuffer::PrepareAttributeDescriptions(VertexLayoutPreset layout,const VertexBufferLayout& bufferLayout)
     {
+        ZoneScoped;
+
         sm_VertexInputDescription[layout].AttributeDescription.resize(bufferLayout.VertexElements.size());
 
         for (int i = 0; i < sm_VertexInputDescription[layout].AttributeDescription.size(); i++)

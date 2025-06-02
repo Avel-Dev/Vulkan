@@ -36,8 +36,16 @@ namespace CHIKU
 			VkPipeline GraphicsPipeline;
 		};
 
-		Pipeline GetOrCreateGraphicsPipeline(PipelineKey key, const Material& material, const VertexBuffer& vertexBuffer);
-		Pipeline CreateGraphicsPipeline(const VkPipelineShaderStageCreateInfo* pipelineStages, VertexBuffer::VertexInputDescription description, VkDescriptorSetLayout layout);
+		Pipeline GetOrCreateGraphicsPipeline(
+			PipelineKey key, 
+			const Material& material, 
+			const VertexBuffer& vertexBuffer);
+
+		Pipeline CreateGraphicsPipeline(
+			const VkPipelineShaderStageCreateInfo* pipelineStages, 
+			VertexBuffer::VertexInputDescription description, 
+			const VkDescriptorSetLayout* layout,
+			uint32_t size);
 
 	private:
 		static std::unordered_map<PipelineKey, Pipeline> sm_GrphicsPipeline;

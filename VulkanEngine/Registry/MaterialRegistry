@@ -1,0 +1,8 @@
+Material1:
+	-AssetID
+	-ShaderID
+		-PerVertexData
+		-Uniforms
+	-Textures
+	-GraphicsPipelineFlags
+

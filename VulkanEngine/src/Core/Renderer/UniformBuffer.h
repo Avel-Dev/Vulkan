@@ -14,28 +14,30 @@ namespace CHIKU
         static void Update();
         static void CleanUp();
 
+        static void FinalizeLayout(UniformBufferLayout& layout);
+        static UniformBufferDescription CreateUniformDescription(const UniformBufferLayout& UniformBufferLayoutsconst);
+
     private:
         static void CreateDescriptorPool();
 
         static UniformBufferDescription GetOrBuildUniform(GenericUniformBuffers presets);
-        static UniformBufferDescription CreateUniformDescription(GenericUniformBuffers presets);
         static VkDescriptorSetLayout CreateDescriptorSetLayout(const UniformBufferLayout& presets);
         static void CreateDescriptorSets(const UniformBufferLayout& layout,
             VkDescriptorSetLayout descriptorSetLayouts, 
             std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>& descriptorSets,
             std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT>& uniformBuffers,
-            /* Remove this */
-            TextureData texture);
+            const TextureData* texture);
 
         static void CreateUniformBuffer(size_t Size, 
             std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT>& UniformBuffers, 
             std::array<VkDeviceMemory, MAX_FRAMES_IN_FLIGHT>& UniformBuffersMemory,
             std::array<void*, MAX_FRAMES_IN_FLIGHT>& UniformBuffersMapped);
 
-        static void FinalizeLayout(UniformBufferLayout& layout);
         static UniformBufferLayout GetUniformBufferLayout(GenericUniformBuffers BufferType);
 
         static VkDescriptorPool sm_DescriptorPool;
+
+    private:
         static std::unordered_map<GenericUniformBuffers, UniformBufferDescription> sm_BufferDescriptions;
     };
 }

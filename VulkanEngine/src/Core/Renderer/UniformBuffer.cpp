@@ -18,19 +18,26 @@ namespace CHIKU
 
 	void UniformBuffer::Init()
 	{
+		ZoneScoped;
 		CreateDescriptorPool(); //Create the Descriptor Pool
 
 		GetOrBuildUniform(GenericUniformBuffers::MVP); //Here we Create Uniform Buffer to be used later
+		GetOrBuildUniform(GenericUniformBuffers::Color); //Here we Create Uniform Buffer to be used later
 	}
 
 	void UniformBuffer::FinalizeLayout(UniformBufferLayout& layout)
 	{
-		for (auto attribute : layout.PlainBufferAttributes)
+		ZoneScoped;
+
+		for (auto attribute : layout.PlainAttributes.Types)
 		{
-			switch (attribute.AttributeType)
+			switch (attribute)
 			{
 			case UniformPlainDataType::Mat4:
-				layout.Size += sizeof(glm::mat4);
+				layout.PlainAttributes.Size += sizeof(glm::mat4);
+				break;
+			case UniformPlainDataType::Vec3:
+				layout.PlainAttributes.Size += sizeof(glm::vec3);
 				break;
 			}
 		}
@@ -38,38 +45,62 @@ namespace CHIKU
 
 	UniformBufferLayout UniformBuffer::GetUniformBufferLayout(GenericUniformBuffers BufferType)
 	{
-		UniformBufferLayout Layout;
-		if (BufferType == GenericUniformBuffers::MVP)
-		{
-			Layout = {
-				/* Plain Data Layout = */ {
-					{"u_Model",UniformPlainDataType::Mat4, VK_SHADER_STAGE_VERTEX_BIT},
-					{"u_View",UniformPlainDataType::Mat4, VK_SHADER_STAGE_VERTEX_BIT},
-					{"u_Proj",UniformPlainDataType::Mat4, VK_SHADER_STAGE_VERTEX_BIT}
-				},
-				/* Opaque Data like Textures */ {
-					{"u_Texture",UniformOpaqueDataType::Sampler2D,VK_SHADER_STAGE_FRAGMENT_BIT}
-				},
-				/*Binding = */ 0, //This is the binding that should be used in the Shaders
-				/*Size = */ 0 //This is only here to show the layout the method to calculate the size is below
-			};
+		ZoneScoped;
 
-			FinalizeLayout(Layout); //This method calculates the Size of the Uniform Buffer
+		UniformBufferLayout Layout;
+		switch (BufferType)
+		{
+		case GenericUniformBuffers::MVP:
+			Layout = {
+				/*UniformPlainData*/
+				{
+					/*UniformPlainDataType*/
+					{
+						UniformPlainDataType::Mat4, //Model Matrix
+						UniformPlainDataType::Mat4, //View Matrix
+						UniformPlainDataType::Mat4  //Projection Matrix
+					},
+				/*Size = 0*/0, /*FinalizeLayout will get the value*/
+				/*Binding = */ 0
+			},
+				/*UniformOpaqueData*/
+				{}
+			};
+			break;
+		case GenericUniformBuffers::Color:
+			Layout = {
+				/*UniformPlainData*/
+				{
+					/*UniformPlainDataType*/
+					{
+						UniformPlainDataType::Vec3, //Model Matrix
+					},
+				/*Size = 0*/0, /*FinalizeLayout will get the value*/
+				/*Binding = */ 1
+			},
+				/*UniformOpaqueData*/
+				{}
+			};
+			break;
 		}
+
+		FinalizeLayout(Layout); //This method calculates the Size of the Uniform Buffer
 
 		return Layout;
 	}
 
 	void UniformBuffer::Bind(VkPipelineLayout pipelineLayout)
 	{
-		for (auto& [_, description] : sm_BufferDescriptions)
-		{
-			vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &description.DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
-		}
+		ZoneScoped;
+
+		vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &sm_BufferDescriptions[GenericUniformBuffers::MVP].DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
+		vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &sm_BufferDescriptions[GenericUniformBuffers::Color].DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
 	}
 
 	void UniformBuffer::Update()
 	{
+		ZoneScoped;
+
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
@@ -82,68 +113,103 @@ namespace CHIKU
 		proj[1][1] *= -1;
 
 		glm::mat4 data[3] = { model,view,proj };
-
-		memcpy(sm_BufferDescriptions[GenericUniformBuffers::MVP].UniformBuffersMapped[VulkanEngine::GetCurrentFrame()], data , sizeof(glm::mat4) * 3);
+		glm::vec3 color(1.0f, 1.0f, 1.0f);
+		memcpy(sm_BufferDescriptions[GenericUniformBuffers::MVP].UniformBuffersMapped[VulkanEngine::GetCurrentFrame()], data, sizeof(glm::mat4) * 3);
+		memcpy(sm_BufferDescriptions[GenericUniformBuffers::Color].UniformBuffersMapped[VulkanEngine::GetCurrentFrame()], &color, sizeof(glm::vec3));
 	}
 
 	UniformBufferDescription UniformBuffer::GetOrBuildUniform(GenericUniformBuffers presets)
 	{
+		ZoneScoped;
+
 		if (sm_BufferDescriptions.find(presets) == sm_BufferDescriptions.end())
 		{
-			sm_BufferDescriptions[presets] = CreateUniformDescription(presets);
+			sm_BufferDescriptions[presets] = CreateUniformDescription(GetUniformBufferLayout(presets));
 		}
 
 		return sm_BufferDescriptions.at(presets);
 	}
 
-	UniformBufferDescription UniformBuffer::CreateUniformDescription(GenericUniformBuffers presets)
+	UniformBufferDescription UniformBuffer::CreateUniformDescription(const UniformBufferLayout& UniformBufferLayouts)
 	{
+		ZoneScoped;
+
 		UniformBufferDescription description;
-		Utils::CreateTextureImage("models/Texture1.png", description.Texture.TextureImage, description.Texture.TextureImageMemory);
-		description.Texture.textureImageView = Utils::CreateTextureImageView(description.Texture.TextureImage);
-		description.Texture.textureSampler = Utils::CreateTextureSampler();
+		description.DescriptorSetLayouts = CreateDescriptorSetLayout(UniformBufferLayouts);
 
-		description.UniformBufferLayouts = GetUniformBufferLayout(presets);
-		description.DescriptorSetLayouts = CreateDescriptorSetLayout(description.UniformBufferLayouts);		
+		if (UniformBufferLayouts.PlainAttributes.Size > 0)
+		{
+			CreateUniformBuffer(UniformBufferLayouts.PlainAttributes.Size,
+				description.UniformBuffers,
+				description.UniformBuffersMemory,
+				description.UniformBuffersMapped);
+		}
 
-		CreateUniformBuffer(description.UniformBufferLayouts.Size,
-			description.UniformBuffers,
-			description.UniformBuffersMemory,
-			description.UniformBuffersMapped);
+		if(UniformBufferLayouts.OpeaquData)
+		{
+			TextureData Texture;
+				Utils::CreateImage(
+					1024, 1024,
+					VK_FORMAT_R8G8B8A8_SRGB,
+					VK_IMAGE_TILING_OPTIMAL,
+					VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+					Texture.TextureImage,
+					Texture.TextureImageMemory);
 
-		CreateDescriptorSets(description.UniformBufferLayouts,
-			description.DescriptorSetLayouts,
-			description.DescriptorSets,
-			description.UniformBuffers,
-			description.Texture);
+				Utils::CreateTextureImage("models/Texture1.png", // Path to your texture file
+					Texture.TextureImage,
+					Texture.TextureImageMemory);
+
+				Texture.TextureImageView = Utils::CreateTextureImageView(Texture.TextureImage);
+				Texture.TextureSampler = Utils::CreateTextureSampler();
+
+			CreateDescriptorSets(UniformBufferLayouts,
+				description.DescriptorSetLayouts,
+				description.DescriptorSets,
+				description.UniformBuffers,
+				&Texture);
+		}
+		else
+		{
+			CreateDescriptorSets(UniformBufferLayouts,
+				description.DescriptorSetLayouts,
+				description.DescriptorSets,
+				description.UniformBuffers,
+				nullptr);
+		}
 
 		return description;
 	}
 
 	VkDescriptorSetLayout UniformBuffer::CreateDescriptorSetLayout(const UniformBufferLayout& bufferLayout)
 	{
+		ZoneScoped;
+
 		VkDescriptorSetLayout layout;
 
-		std::vector<VkDescriptorSetLayoutBinding> bindings;
+		std::vector<VkDescriptorSetLayoutBinding> bindings{};
 
-		if (bufferLayout.PlainBufferAttributes.size() > 0)
+		if (bufferLayout.PlainAttributes.Size > 0)
 		{
-			bindings.emplace_back();
-			bindings[0].binding = 0;
-			bindings[0].descriptorCount = 1;
-			bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			bindings[0].pImmutableSamplers = nullptr;
-			bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+			bindings.emplace_back(
+				/*    uint32_t              binding; = */			bufferLayout.PlainAttributes.Binding,
+				/*    VkDescriptorType      descriptorType; = */	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				/*    uint32_t              descriptorCount; = */	1,
+				/*    VkShaderStageFlags    stageFlags; = */		VK_SHADER_STAGE_VERTEX_BIT,
+				/*    const VkSampler*      pImmutableSamplers; = */nullptr
+			);
 		}
 
-		if (bufferLayout.OpaqueBufferAttributes.size() > 0)
+		if (bufferLayout.OpeaquData)
 		{
-			bindings.emplace_back();
-			bindings[1].binding = 1;
-			bindings[1].descriptorCount = 1;
-			bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			bindings[1].pImmutableSamplers = nullptr;
-			bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			bindings.emplace_back(
+				/*     uint32_t              binding; =*/			bufferLayout.OpeaquData.Binding,
+				/*     VkDescriptorType      descriptorType; =*/	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				/*     uint32_t              descriptorCount; =*/	1,
+				/*     VkShaderStageFlags    stageFlags; =*/		VK_SHADER_STAGE_FRAGMENT_BIT,
+				/*     const VkSampler*      pImmutableSamplers; =*/nullptr
+			); // We will have at least 2 bindings: one for the uniform buffer and one for the texture samplerss
 		}
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -161,17 +227,19 @@ namespace CHIKU
 
 	void UniformBuffer::CreateDescriptorPool()
 	{
+		ZoneScoped;
+
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[0].descriptorCount = MAX_DESCRIPTOR_SETS;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[1].descriptorCount = MAX_DESCRIPTOR_SETS;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * MAX_DESCRIPTOR_SETS);
 
 		if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &sm_DescriptorPool) != VK_SUCCESS)
 		{
@@ -183,9 +251,10 @@ namespace CHIKU
 		VkDescriptorSetLayout descriptorSetLayouts,
 		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>& descriptorSets,
 		std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT>& uniformBuffers,
-		/* Remove this */ 
-		TextureData texture)
+		const TextureData* texture)
 	{
+		ZoneScoped;
+
 		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayouts);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -202,40 +271,47 @@ namespace CHIKU
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites{};
 
-			if (layout.PlainBufferAttributes.size() > 0)
+
+			if (layout.PlainAttributes.Size > 0)
 			{
 				VkDescriptorBufferInfo bufferInfo{};
 				bufferInfo.buffer = uniformBuffers[i];
 				bufferInfo.offset = 0;
-				bufferInfo.range = layout.Size;
+				bufferInfo.range = layout.PlainAttributes.Size;
 
-				descriptorWrites.emplace_back();
-
-				descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				descriptorWrites[0].dstSet = descriptorSets[i];
-				descriptorWrites[0].dstBinding = 0;
-				descriptorWrites[0].dstArrayElement = 0;
-				descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				descriptorWrites[0].descriptorCount = 1;
-				descriptorWrites[0].pBufferInfo = &bufferInfo;
+				descriptorWrites.emplace_back(
+					/*VkStructureType                  sType; = */ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					/*const void*						pNext; = */ nullptr,
+					/*VkDescriptorSet                  dstSet; = */ descriptorSets[i],
+					/*uint32_t                         dstBinding; = */ layout.PlainAttributes.Binding,
+					/*uint32_t                         dstArrayElement; = */ 0,
+					/*uint32_t                         descriptorCount; = */ 1,
+					/*VkDescriptorType                 descriptorType; = */ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					/*const VkDescriptorImageInfo* pImageInfo; = */ nullptr,
+					/*const VkDescriptorBufferInfo* pBufferInfo; = */ &bufferInfo,
+					/*const VkBufferView* pTexelBufferView; = */ nullptr
+					);
 			}
 
-			if (layout.OpaqueBufferAttributes.size() > 0)
+			if (layout.OpeaquData)
 			{
 				VkDescriptorImageInfo imageInfo{};
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = texture.textureImageView;
-				imageInfo.sampler = texture.textureSampler;
+				imageInfo.imageView = texture[0].TextureImageView;
+				imageInfo.sampler = texture[0].TextureSampler;
 
-				descriptorWrites.emplace_back();
-
-				descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				descriptorWrites[1].dstSet = descriptorSets[i];
-				descriptorWrites[1].dstBinding = 1;
-				descriptorWrites[1].dstArrayElement = 0;
-				descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				descriptorWrites[1].descriptorCount = 1;
-				descriptorWrites[1].pImageInfo = &imageInfo;
+				descriptorWrites.emplace_back(
+					/*VkStructureType                  sType; = */ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					/*const void*						pNext; = */ nullptr,
+					/*VkDescriptorSet                  dstSet; = */ descriptorSets[i],
+					/*uint32_t                         dstBinding; = */ layout.PlainAttributes.Binding,
+					/*uint32_t                         dstArrayElement; = */ 0,
+					/*uint32_t                         descriptorCount; = */ 1,
+					/*VkDescriptorType                 descriptorType; = */ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					/*const VkDescriptorImageInfo* pImageInfo; = */ &imageInfo,
+					/*const VkDescriptorBufferInfo* pBufferInfo; = */ nullptr,
+					/*const VkBufferView* pTexelBufferView; = */ nullptr
+				);
 			}
 
 			vkUpdateDescriptorSets(VulkanEngine::GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
@@ -247,6 +323,8 @@ namespace CHIKU
 		std::array<VkDeviceMemory, MAX_FRAMES_IN_FLIGHT>& UniformBuffersMemory,
 		std::array<void*, MAX_FRAMES_IN_FLIGHT>& UniformBuffersMapped)
 	{
+		ZoneScoped;
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			Utils::CreateBuffer(Size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -259,16 +337,18 @@ namespace CHIKU
 
 	void UniformBuffer::CleanUp()
 	{
+		ZoneScoped;
+
 		auto& device = VulkanEngine::GetDevice();
 
 		for (auto& [_, description] : sm_BufferDescriptions)
 		{
 
-			vkDestroySampler(device, description.Texture.textureSampler, nullptr);
-			vkDestroyImageView(device, description.Texture.textureImageView, nullptr);
+			//vkDestroySampler(device, description.Texture.textureSampler, nullptr);
+			//vkDestroyImageView(device, description.Texture.textureImageView, nullptr);
 
-			vkDestroyImage(device, description.Texture.TextureImage, nullptr);
-			vkFreeMemory(device, description.Texture.TextureImageMemory, nullptr);
+			//vkDestroyImage(device, description.Texture.TextureImage, nullptr);
+			//vkFreeMemory(device, description.Texture.TextureImageMemory, nullptr);
 
 			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 			{

@@ -6,6 +6,8 @@ namespace CHIKU
 {
     void IndexBuffer::CreateIndexBuffer(const std::vector<uint32_t>& indices)
     {
+        ZoneScoped;
+
         count = (uint32_t)indices.size();
         VkDeviceSize bufferSize = sizeof(indices[0]) * count;
 
@@ -28,11 +30,15 @@ namespace CHIKU
 
     void IndexBuffer::Bind()
     {
+        ZoneScoped;
+
         vkCmdBindIndexBuffer(VulkanEngine::GetCommandBuffer(), m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
     void IndexBuffer::CleanUp()
     {
+        ZoneScoped;
+
         vkDestroyBuffer(VulkanEngine::GetDevice(), m_IndexBuffer, nullptr);
         vkFreeMemory(VulkanEngine::GetDevice(), m_IndexBufferMemory, nullptr);
     }

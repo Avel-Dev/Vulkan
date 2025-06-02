@@ -5,6 +5,8 @@ namespace CHIKU
 {
 	void Commands::Init(VkQueue graphicsQueue, VkDevice device, const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface)
 	{
+		ZoneScoped;
+
 		m_GraphicsQueue = graphicsQueue;
 		m_LogicalDevice = device;
 		CreateCommandPool(physicalDevice,surface);
@@ -13,11 +15,15 @@ namespace CHIKU
 
 	void Commands::CleanUp()
 	{
+		ZoneScoped;
+
 		vkDestroyCommandPool(m_LogicalDevice, Commands::m_CommandPool, nullptr);
 	}
 
 	VkCommandBuffer Commands::BeginSingleTimeCommands()
 	{
+		ZoneScoped;
+
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -38,6 +44,8 @@ namespace CHIKU
 
 	void Commands::EndSingleTimeCommands( VkCommandBuffer commandBuffer)
 	{
+		ZoneScoped;
+
 		vkEndCommandBuffer(commandBuffer);
 
 		VkSubmitInfo submitInfo{};
@@ -53,6 +61,8 @@ namespace CHIKU
 
 	void Commands::CreateCommandBuffer()
 	{
+		ZoneScoped;
+
 		m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -68,6 +78,8 @@ namespace CHIKU
 
 	void Commands::CreateCommandPool(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface)
 	{
+		ZoneScoped;
+
 		Utils::QueueFamilyIndices queueFamilyIndices = Utils::FindQueueFamilies(physicalDevice,surface);
 
 		VkCommandPoolCreateInfo poolInfo{};

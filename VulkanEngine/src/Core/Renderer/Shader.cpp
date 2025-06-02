@@ -11,15 +11,20 @@ namespace CHIKU
 
     ShaderManager::~ShaderManager() 
     {
+        ZoneScoped;
+
         Cleanup();
     }
 
     void ShaderManager::Init()
     {
+        ZoneScoped;
     }
 
     std::vector<char> ShaderManager::ReadFile(const std::string& filePath) 
     {
+        ZoneScoped;
+
         std::ifstream file(SOURCE_DIR + filePath, std::ios::ate | std::ios::binary);
 
         if (!file)
@@ -38,6 +43,8 @@ namespace CHIKU
 
     VkShaderModule ShaderManager::CreateShaderModule(const std::vector<char>& code) 
     {
+        ZoneScoped;
+
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = code.size();
@@ -54,6 +61,8 @@ namespace CHIKU
 
     bool ShaderManager::GetShaderPath(const std::filesystem::path& ID, std::vector<std::string>& shaderPaths)
     {
+        ZoneScoped;
+
         std::vector<std::string> keys;
         std::string filePath = SOURCE_DIR + "shader/shaderlist.json";
         nlohmann::json shaderJson;
@@ -123,6 +132,8 @@ namespace CHIKU
 
     bool ShaderManager::CreateShaderProgram(const std::filesystem::path& ID)
     {
+        ZoneScoped;
+
         if (sm_ShaderPrograms.count(ID.string()))
         {
             return true; // Already loaded
@@ -178,6 +189,8 @@ namespace CHIKU
 
     const std::vector<VkPipelineShaderStageCreateInfo>& ShaderManager::GetShaderStages(const std::filesystem::path& ID)
     {   
+        ZoneScoped;
+
         if (!CreateShaderProgram(ID))
         {
             throw std::runtime_error("Shader not loaded: " + ID.string());
@@ -188,6 +201,8 @@ namespace CHIKU
 
     void ShaderManager::Cleanup() 
     {
+        ZoneScoped;
+
         for (auto& [_, program] : sm_ShaderPrograms) 
         {
             for (auto& [_,module] : program.ShaderModules)
@@ -200,6 +215,8 @@ namespace CHIKU
 
     bool ShaderManager::CreateSPIRV(const std::string& a_ShaderPath, const std::string& a_OutPutPath)
     {
+        ZoneScoped;
+
         std::string command = "glslc.exe " + (SOURCE_DIR + a_ShaderPath) + " -o " + (SOURCE_DIR + a_OutPutPath);
         int result = std::system(command.c_str());
 

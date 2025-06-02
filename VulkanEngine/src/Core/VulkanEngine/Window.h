@@ -14,7 +14,11 @@ namespace CHIKU
 
 		inline GLFWwindow* GetWindow() { return m_Window; }
 		inline bool WindowShouldClose() const { return glfwWindowShouldClose(m_Window); }
-		inline void WindowPoolEvent() const { glfwPollEvents(); }
+		inline void WindowPoolEvent() const 
+		{ 
+			ZoneScoped;
+			glfwPollEvents(); 
+		}
 
 	private:
 		void InitWindow();

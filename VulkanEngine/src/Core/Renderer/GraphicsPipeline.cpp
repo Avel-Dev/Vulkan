@@ -12,10 +12,13 @@ namespace CHIKU
 
 	void GraphicsPipeline::Init()
 	{
+        ZoneScoped;
 	}
 
     void GraphicsPipeline::Bind(const Material& material, const VertexBuffer& vertexbuffer)
     {
+        ZoneScoped;
+
         PipelineKey key = {
            material.GetShaderID(),
            vertexbuffer.GetBufferLayout(),
@@ -34,6 +37,8 @@ namespace CHIKU
 
     void GraphicsPipeline::CleanUp()
     {
+        ZoneScoped;
+
         for (auto i : sm_GrphicsPipeline)
         {
             vkDestroyPipeline(VulkanEngine::GetDevice(), i.second.GraphicsPipeline, nullptr);
@@ -45,20 +50,31 @@ namespace CHIKU
 
     GraphicsPipeline::Pipeline GraphicsPipeline::GetOrCreateGraphicsPipeline(PipelineKey key, const Material& material, const VertexBuffer& vertexBuffer)
     {
+        ZoneScoped;
+
+        VkDescriptorSetLayout layout[] = { UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::MVP), UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::Color) };
+
         if (sm_GrphicsPipeline.find(key) == sm_GrphicsPipeline.end())
         {
             sm_GrphicsPipeline[key] = CreateGraphicsPipeline(
                 ShaderManager::GetShaderStages(material.GetShaderID()).data(),
                 vertexBuffer.GetBufferDescription(),
-                UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::MVP)
+                layout,
+                2
             );
         }
 
         return sm_GrphicsPipeline.at(key);
     }
 
-    GraphicsPipeline::Pipeline GraphicsPipeline::CreateGraphicsPipeline(const VkPipelineShaderStageCreateInfo* pipelineStages, VertexBuffer::VertexInputDescription description, VkDescriptorSetLayout layout)
+    GraphicsPipeline::Pipeline GraphicsPipeline::CreateGraphicsPipeline(
+        const VkPipelineShaderStageCreateInfo* pipelineStages, 
+        VertexBuffer::VertexInputDescription description,
+        const VkDescriptorSetLayout* layout,
+        uint32_t size)
 	{
+        ZoneScoped;
+
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
 
@@ -122,9 +138,9 @@ namespace CHIKU
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.setLayoutCount = size;
 
-        pipelineLayoutInfo.pSetLayouts = &layout;
+        pipelineLayoutInfo.pSetLayouts = layout;
 
         if (vkCreatePipelineLayout(VulkanEngine::GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
         {

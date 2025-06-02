@@ -8,6 +8,8 @@ namespace CHIKU
 {
     void Swapchain::Init(GLFWwindow* window, const VkPhysicalDevice& physicalDevice, const VkDevice& logicalDevice, const VkSurfaceKHR& surface)
     {
+        ZoneScoped;
+
         m_LogicalDevice = logicalDevice;
         CreateSwapchain(window,physicalDevice,surface);
         CreateImageViews();
@@ -18,6 +20,8 @@ namespace CHIKU
 
     void Swapchain::CleanUp()
     {
+        ZoneScoped;
+
         vkDestroyImageView(m_LogicalDevice, m_DepthImageView, nullptr);
         vkDestroyImage(m_LogicalDevice, m_DepthImage, nullptr);
         vkFreeMemory(m_LogicalDevice, m_DepthImageMemory, nullptr);
@@ -38,6 +42,8 @@ namespace CHIKU
 
     void Swapchain::RecreateSwapchain(GLFWwindow* window,const VkPhysicalDevice& physicalDevice,const VkSurfaceKHR& surface)
     {
+        ZoneScoped;
+
         int width = 0, height = 0;
         glfwGetFramebufferSize(window, &width, &height);
         while (width == 0 || height == 0)
@@ -57,6 +63,8 @@ namespace CHIKU
 
     VkFormat Swapchain::FindDepthFormat(const VkPhysicalDevice&physicalDevice)
     {
+        ZoneScoped;
+
         return  Utils::FindSupportedFormat(physicalDevice,
             { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
             VK_IMAGE_TILING_OPTIMAL,
@@ -66,6 +74,8 @@ namespace CHIKU
 
     void Swapchain::CreateDepthResources(const VkPhysicalDevice&physicalDevice)
     {
+        ZoneScoped;
+
         VkFormat depthFormat = FindDepthFormat(physicalDevice);
 
         Utils::CreateImage(
@@ -84,12 +94,16 @@ namespace CHIKU
 
     VkResult Swapchain::AcquireNextImageInSwapchain(const VkDevice& device, const VkSemaphore& semaphore, uint32_t* pImageIndex)
     {
+        ZoneScoped;
+
         return vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, pImageIndex);
     }
 
     bool u = false;
     void Swapchain::BeginRenderPass(const VkCommandBuffer& commandBuffer,uint32_t imageIndex)
     {
+        ZoneScoped;
+
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_RenderPass;
@@ -125,11 +139,15 @@ namespace CHIKU
 
     void Swapchain::EndRenderPass(const VkCommandBuffer& commandBuffer)
     {
+        ZoneScoped;
+
         vkCmdEndRenderPass(commandBuffer);
     }
 
     void Swapchain::CreateRenderpass(const VkPhysicalDevice&physicalDevice)
     {
+        ZoneScoped;
+
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = m_SwapChainImageFormat;
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -190,6 +208,8 @@ namespace CHIKU
 
     void Swapchain::CreateSwapchain(GLFWwindow* window,const VkPhysicalDevice&physicalDevice,const VkSurfaceKHR& surface)
     {
+        ZoneScoped;
+
         SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(physicalDevice,surface);
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.PresentModes);
@@ -248,6 +268,8 @@ namespace CHIKU
 
     void Swapchain::CreateImageViews()
     {
+        ZoneScoped;
+
         m_SwapChainImageViews.resize(m_SwapChainImages.size());
         for (size_t i = 0; i < m_SwapChainImages.size(); i++)
         {
@@ -257,6 +279,8 @@ namespace CHIKU
 
     void Swapchain::CreateFrameBuffers()
     {
+        ZoneScoped;
+
         SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
 
         for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
@@ -284,6 +308,8 @@ namespace CHIKU
 
     SwapChainSupportDetails Swapchain::QuerySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
     {
+        ZoneScoped;
+
         SwapChainSupportDetails details;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capabilities);
 
@@ -308,6 +334,8 @@ namespace CHIKU
 
     VkSurfaceFormatKHR Swapchain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
     {
+        ZoneScoped;
+
         for (const auto& availableFormat : availableFormats)
         {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -321,6 +349,8 @@ namespace CHIKU
 
     VkPresentModeKHR Swapchain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
     {
+        ZoneScoped;
+
         for (const auto& availablePresentMode : availablePresentModes)
         {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -334,6 +364,8 @@ namespace CHIKU
 
     VkExtent2D Swapchain::ChooseSwapExtent(GLFWwindow* window,const VkSurfaceCapabilitiesKHR& capabilities)
     {
+        ZoneScoped;
+
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
         {
             return capabilities.currentExtent;

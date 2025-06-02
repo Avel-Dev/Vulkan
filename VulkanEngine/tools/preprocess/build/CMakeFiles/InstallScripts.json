@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/dev/Vulkan/VulkanEngine/tools/preprocess/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

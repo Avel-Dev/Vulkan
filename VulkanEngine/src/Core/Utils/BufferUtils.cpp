@@ -8,6 +8,8 @@ namespace CHIKU
 	{
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 		{
+            ZoneScoped;
+
 			auto commandBuffer = VulkanEngine::BeginRecordingSingleTimeCommands();
 			VkBufferCopy copyRegion{};
 			copyRegion.srcOffset = 0; // Optional
@@ -19,6 +21,8 @@ namespace CHIKU
 
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 		{
+            ZoneScoped;
+
 			VkBufferCreateInfo bufferInfo{};
 			bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			bufferInfo.size = size;
@@ -48,6 +52,8 @@ namespace CHIKU
 
         size_t GetAttributeSize(VertexAttributeType type)
         {
+            ZoneScoped;
+
             switch (type)
             {
             case VertexAttributeType::Float:     return 4;
@@ -82,6 +88,8 @@ namespace CHIKU
 
         void FinalizeLayout(VertexBufferLayout& layout)
         {
+            ZoneScoped;
+
             uint32_t offset = 0;
             for (auto& attr : layout.VertexElements)
             {
@@ -93,6 +101,8 @@ namespace CHIKU
 
         VertexBufferLayout CreateVertexBufferLayout(VertexLayoutPreset preset)
         {
+            ZoneScoped;
+
             VertexBufferLayout layout;
 
             switch (preset)
@@ -158,6 +168,8 @@ namespace CHIKU
 
         VkFormat MapVertexAttributeTypeToVkFormat(VertexAttributeType type)
         {
+            ZoneScoped;
+
             switch (type) {
             case VertexAttributeType::Float:     return VK_FORMAT_R32_SFLOAT;
             case VertexAttributeType::Vec2:      return VK_FORMAT_R32G32_SFLOAT;

@@ -4,8 +4,15 @@ if(UNIX AND NOT APPLE)
     add_compile_options(-march=x86-64 -mtune=generic -O2)
 endif()
 
+# set options before add_subdirectory
+# available options: TRACY_ENABLE, TRACY_LTO, TRACY_ON_DEMAND, TRACY_NO_BROADCAST,
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
+
+add_subdirectory("tools/preprocess")
 add_subdirectory("vendor/glfw")
 add_subdirectory("vendor/glm")
+add_subdirectory("vendor/tracy")
 
 include_directories("vendor/glfw/include")
 include_directories("vendor/glm")
@@ -13,9 +20,10 @@ include_directories("vendor/stb_image")
 include_directories("vendor/tinyobjloader")
 include_directories("vendor/json_nlohmann")
 include_directories("vendor/spirv_reflect")
+include_directories("vendor/tracy/public")
 include_directories("src/")
 include_directories("src/Core/")
-
+ 
 include_directories($ENV{VULKAN_SDK}/include)
 link_directories($ENV{VULKAN_SDK}/lib)
 
@@ -46,8 +54,11 @@ elseif(APPLE)
 else()
     message(STATUS "Unknown OS")
 endif()
+
 target_link_libraries(VulkanEngine
+PUBLIC
     glfw
+    Tracy::TracyClient
     ${VULKAN_LIB}
 )
 
