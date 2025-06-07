@@ -14,8 +14,10 @@ add_subdirectory("vendor/glfw")
 add_subdirectory("vendor/glm")
 add_subdirectory("vendor/tracy")
 add_subdirectory("vendor/yaml-cpp")
-add_subdirectory("vendor/tinygltf")
+add_subdirectory("vendor/tinygltf/tinygltf")
 
+
+include_directories("vendor/tinygltf")
 include_directories("vendor/glfw/include")
 include_directories("vendor/glm")
 include_directories("vendor/stb_image")
