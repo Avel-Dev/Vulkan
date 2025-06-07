@@ -10,6 +10,7 @@ namespace CHIKU
 		Application();
 		void Init();
 		void Run();
+		void Render();
 		void CleanUp();
 
 	private:

@@ -25,13 +25,11 @@ namespace CHIKU
            material.GetMaterialType()
         };
 
-        GetOrCreateGraphicsPipeline(key, material, vertexbuffer);
+        Pipeline pipeLine = GetOrCreateGraphicsPipeline(key, material, vertexbuffer);
 
-        UniformBuffer::Update();
-        UniformBuffer::Bind(sm_GrphicsPipeline.at(key).PipelineLayout);
-        vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, sm_GrphicsPipeline.at(key).GraphicsPipeline);
-
-        material.Bind(sm_GrphicsPipeline.at(key).PipelineLayout);
+        vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLine.GraphicsPipeline);
+        UniformBuffer::BindDefaultUniforms(pipeLine.PipelineLayout);
+        material.Bind(pipeLine.PipelineLayout);
         vertexbuffer.Bind();
     }
 
@@ -52,7 +50,7 @@ namespace CHIKU
     {
         ZoneScoped;
 
-        VkDescriptorSetLayout layout[] = { UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::MVP), UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::Color) };
+        VkDescriptorSetLayout layout[] = { UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::MVP), UniformBuffer::GetDescriptorSetLayout(GenericUniformBuffers::Color), material.GetLayout() };
 
         if (sm_GrphicsPipeline.find(key) == sm_GrphicsPipeline.end())
         {
@@ -60,7 +58,7 @@ namespace CHIKU
                 ShaderManager::GetShaderStages(material.GetShaderID()).data(),
                 vertexBuffer.GetBufferDescription(),
                 layout,
-                2
+                3
             );
         }
 

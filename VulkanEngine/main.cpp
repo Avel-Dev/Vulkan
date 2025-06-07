@@ -7,7 +7,7 @@ int main()
 	CHIKU::Application Application;
 
 	Application.Init();
-	Application.Run();
+	Application.Render();
 	Application.CleanUp();
 
 	return 0;

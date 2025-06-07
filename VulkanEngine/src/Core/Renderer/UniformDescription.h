@@ -68,7 +68,7 @@ namespace CHIKU
     struct UniformBufferLayout
     {
         UniformPlainData PlainAttributes;
-        UniformOpaqueData OpeaquData;
+        std::vector<UniformOpaqueData> OpeaquData;
     };
 
     struct TextureData

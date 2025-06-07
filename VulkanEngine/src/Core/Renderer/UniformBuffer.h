@@ -9,13 +9,14 @@ namespace CHIKU
     {
     public:
         static void Init(); //Create Descriptor Pool and Generic Descriptor Set layout and Descriptor Sets.
-        static void Bind(VkPipelineLayout pipelineLayout); //Bind the Generic Descriptor Sets.
+		static void AddUniformBuffer(VkDescriptorSet descriptorSet);
+        static void BindDefaultUniforms(VkPipelineLayout pipelineLayout); //Bind the Generic Descriptor Sets.
         static VkDescriptorSetLayout GetDescriptorSetLayout(GenericUniformBuffers presets) { return sm_BufferDescriptions[presets].DescriptorSetLayouts; }
         static void Update();
         static void CleanUp();
 
         static void FinalizeLayout(UniformBufferLayout& layout);
-        static UniformBufferDescription CreateUniformDescription(const UniformBufferLayout& UniformBufferLayoutsconst);
+        static UniformBufferDescription CreateUniformDescription(const UniformBufferLayout& UniformBufferLayoutsconst, const TextureData* textureData = nullptr, uint8_t size = 0);
 
     private:
         static void CreateDescriptorPool();
@@ -26,7 +27,8 @@ namespace CHIKU
             VkDescriptorSetLayout descriptorSetLayouts, 
             std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>& descriptorSets,
             std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT>& uniformBuffers,
-            const TextureData* texture);
+            const TextureData* texture = nullptr,
+            uint8_t size = 0);
 
         static void CreateUniformBuffer(size_t Size, 
             std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT>& UniformBuffers, 

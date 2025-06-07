@@ -20,6 +20,13 @@ namespace CHIKU
 		m_GraphicsPipeline.Init();
 
         m_Material.CreateMaterial(MaterialPresets::Unlit);
+
+        MaterialTextuers textures = {
+            UniformOpaqueDataType::DIFFUSE_TEXTURE,
+            "models/Texture1.png"
+        };
+
+        m_Material.CreateTexture(&textures, 1);
 		LoadModel();
 	}
 
@@ -75,6 +82,7 @@ namespace CHIKU
 	{
         ZoneScoped;
 
+        UniformBuffer::Update();
 		m_GraphicsPipeline.Bind(m_Material,m_VertexBuffer);
         m_IndexBuffer.Bind();
 		vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),m_IndexBuffer.GetCount(), 1, 0, 0, 0);

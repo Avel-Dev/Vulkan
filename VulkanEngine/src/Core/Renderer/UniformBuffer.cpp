@@ -76,7 +76,7 @@ namespace CHIKU
 						UniformPlainDataType::Vec3, //Model Matrix
 					},
 				/*Size = 0*/0, /*FinalizeLayout will get the value*/
-				/*Binding = */ 1
+				/*Binding = */ 0
 			},
 				/*UniformOpaqueData*/
 				{}
@@ -89,12 +89,16 @@ namespace CHIKU
 		return Layout;
 	}
 
-	void UniformBuffer::Bind(VkPipelineLayout pipelineLayout)
+	void UniformBuffer::BindDefaultUniforms(VkPipelineLayout pipelineLayout)
 	{
 		ZoneScoped;
 
-		vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &sm_BufferDescriptions[GenericUniformBuffers::MVP].DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
-		vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &sm_BufferDescriptions[GenericUniformBuffers::Color].DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
+		uint8_t i = 0;
+		for (auto& [_,description] : sm_BufferDescriptions)
+		{
+			vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, i, 1, &description.DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
+			i++;
+		}
 	}
 
 	void UniformBuffer::Update()
@@ -130,7 +134,7 @@ namespace CHIKU
 		return sm_BufferDescriptions.at(presets);
 	}
 
-	UniformBufferDescription UniformBuffer::CreateUniformDescription(const UniformBufferLayout& UniformBufferLayouts)
+	UniformBufferDescription UniformBuffer::CreateUniformDescription(const UniformBufferLayout& UniformBufferLayouts, const TextureData* textureData, uint8_t size)
 	{
 		ZoneScoped;
 
@@ -145,38 +149,20 @@ namespace CHIKU
 				description.UniformBuffersMapped);
 		}
 
-		if(UniformBufferLayouts.OpeaquData)
+		if(UniformBufferLayouts.OpeaquData.size() > 0 && size > 0)
 		{
-			TextureData Texture;
-				Utils::CreateImage(
-					1024, 1024,
-					VK_FORMAT_R8G8B8A8_SRGB,
-					VK_IMAGE_TILING_OPTIMAL,
-					VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-					Texture.TextureImage,
-					Texture.TextureImageMemory);
-
-				Utils::CreateTextureImage("models/Texture1.png", // Path to your texture file
-					Texture.TextureImage,
-					Texture.TextureImageMemory);
-
-				Texture.TextureImageView = Utils::CreateTextureImageView(Texture.TextureImage);
-				Texture.TextureSampler = Utils::CreateTextureSampler();
-
 			CreateDescriptorSets(UniformBufferLayouts,
 				description.DescriptorSetLayouts,
 				description.DescriptorSets,
 				description.UniformBuffers,
-				&Texture);
+				textureData,size);
 		}
 		else
 		{
 			CreateDescriptorSets(UniformBufferLayouts,
 				description.DescriptorSetLayouts,
 				description.DescriptorSets,
-				description.UniformBuffers,
-				nullptr);
+				description.UniformBuffers);
 		}
 
 		return description;
@@ -201,15 +187,18 @@ namespace CHIKU
 			);
 		}
 
-		if (bufferLayout.OpeaquData)
+		if (bufferLayout.OpeaquData.size() > 0)
 		{
-			bindings.emplace_back(
-				/*     uint32_t              binding; =*/			bufferLayout.OpeaquData.Binding,
-				/*     VkDescriptorType      descriptorType; =*/	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				/*     uint32_t              descriptorCount; =*/	1,
-				/*     VkShaderStageFlags    stageFlags; =*/		VK_SHADER_STAGE_FRAGMENT_BIT,
-				/*     const VkSampler*      pImmutableSamplers; =*/nullptr
-			); // We will have at least 2 bindings: one for the uniform buffer and one for the texture samplerss
+			for (auto texture : bufferLayout.OpeaquData)
+			{
+				bindings.emplace_back(
+					/*     uint32_t              binding; =*/			texture.Binding,
+					/*     VkDescriptorType      descriptorType; =*/	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					/*     uint32_t              descriptorCount; =*/	1,
+					/*     VkShaderStageFlags    stageFlags; =*/		VK_SHADER_STAGE_FRAGMENT_BIT,
+					/*     const VkSampler*      pImmutableSamplers; =*/nullptr
+				); // We will have at least 2 bindings: one for the uniform buffer and one for the texture samplerss
+			}
 		}
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -251,7 +240,8 @@ namespace CHIKU
 		VkDescriptorSetLayout descriptorSetLayouts,
 		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>& descriptorSets,
 		std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT>& uniformBuffers,
-		const TextureData* texture)
+		const TextureData* texturedata,
+		uint8_t size)
 	{
 		ZoneScoped;
 
@@ -270,7 +260,6 @@ namespace CHIKU
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites{};
-
 
 			if (layout.PlainAttributes.Size > 0)
 			{
@@ -293,25 +282,28 @@ namespace CHIKU
 					);
 			}
 
-			if (layout.OpeaquData)
+			if (layout.OpeaquData.size() > 0)
 			{
-				VkDescriptorImageInfo imageInfo{};
-				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = texture[0].TextureImageView;
-				imageInfo.sampler = texture[0].TextureSampler;
+				for (int j = 0; j < layout.OpeaquData.size(); j++)
+				{
+					VkDescriptorImageInfo imageInfo{};
+					imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfo.imageView = texturedata[j].TextureImageView;
+					imageInfo.sampler = texturedata[j].TextureSampler;
 
-				descriptorWrites.emplace_back(
-					/*VkStructureType                  sType; = */ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-					/*const void*						pNext; = */ nullptr,
-					/*VkDescriptorSet                  dstSet; = */ descriptorSets[i],
-					/*uint32_t                         dstBinding; = */ layout.PlainAttributes.Binding,
-					/*uint32_t                         dstArrayElement; = */ 0,
-					/*uint32_t                         descriptorCount; = */ 1,
-					/*VkDescriptorType                 descriptorType; = */ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-					/*const VkDescriptorImageInfo* pImageInfo; = */ &imageInfo,
-					/*const VkDescriptorBufferInfo* pBufferInfo; = */ nullptr,
-					/*const VkBufferView* pTexelBufferView; = */ nullptr
-				);
+					descriptorWrites.emplace_back(
+						/*VkStructureType                  sType; = */ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+						/*const void*						pNext; = */ nullptr,
+						/*VkDescriptorSet                  dstSet; = */ descriptorSets[i],
+						/*uint32_t                         dstBinding; = */ layout.OpeaquData[j].Binding,
+						/*uint32_t                         dstArrayElement; = */ 0,
+						/*uint32_t                         descriptorCount; = */ 1,
+						/*VkDescriptorType                 descriptorType; = */ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+						/*const VkDescriptorImageInfo* pImageInfo; = */ &imageInfo,
+						/*const VkDescriptorBufferInfo* pBufferInfo; = */ nullptr,
+						/*const VkBufferView* pTexelBufferView; = */ nullptr
+					);
+				}
 			}
 
 			vkUpdateDescriptorSets(VulkanEngine::GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);

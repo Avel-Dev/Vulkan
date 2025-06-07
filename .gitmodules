@@ -4,3 +4,9 @@
 [submodule "VulkanEngine/vendor/tracy"]
 	path = VulkanEngine/vendor/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "VulkanEngine/vendor/yaml-cpp"]
+	path = VulkanEngine/vendor/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "VulkanEngine/vendor/tinygltf"]
+	path = VulkanEngine/vendor/tinygltf/tinygltf
+	url = https://github.com/syoyo/tinygltf.git

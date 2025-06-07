@@ -1,6 +1,7 @@
 #pragma once
 
 #define SOURCE_DIR std::string(STR(CHIKU_SRC_PATH))
+#define ASSET_REGISTRY SOURCE_DIR + std::string(STR(Registry/AssetRegistry.yaml)) 
 
 #ifdef PLT_WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -15,12 +16,16 @@
 #include <GLFW/glfw3native.h>
 #define ENABLE_VALIDATION_LAYERS
 
+#define MAX_TEXTURE_PER_MATERIAL 5
 #define MAX_FRAMES_IN_FLIGHT 3
 #define MAX_DESCRIPTOR_SETS 1000
 #define MAX_DESCRIPTOR_SET_LAYOUTS 1000
 
 #define STR2(x) #x
 #define STR(x) STR2(x)
+
+#include <tracy/tracy.hpp>
+#include <tracy/tracyC.h>
 
 #include <stdexcept>
 #include <vector>
@@ -30,6 +35,3 @@
 #include <cstring>
 #include <array>
 #include <unordered_map>
-
-#include "tracy/tracy.hpp"
-#include "tracy/tracyC.h"

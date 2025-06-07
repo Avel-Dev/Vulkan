@@ -13,6 +13,8 @@ add_subdirectory("tools/preprocess")
 add_subdirectory("vendor/glfw")
 add_subdirectory("vendor/glm")
 add_subdirectory("vendor/tracy")
+add_subdirectory("vendor/yaml-cpp")
+add_subdirectory("vendor/tinygltf")
 
 include_directories("vendor/glfw/include")
 include_directories("vendor/glm")
@@ -21,6 +23,7 @@ include_directories("vendor/tinyobjloader")
 include_directories("vendor/json_nlohmann")
 include_directories("vendor/spirv_reflect")
 include_directories("vendor/tracy/public")
+include_directories("vendor/yaml-cpp/include")
 include_directories("src/")
 include_directories("src/Core/")
  
@@ -60,6 +63,7 @@ PUBLIC
     glfw
     Tracy::TracyClient
     ${VULKAN_LIB}
+    yaml-cpp
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
