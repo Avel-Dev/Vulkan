@@ -1,7 +1,6 @@
 #include "Application.h"
 #include "Renderer/Renderer.h"
 #include "VulkanEngine/Assets/AssetManager.h"
-#include "VulkanEngine/SceneManager.h"
 
 namespace CHIKU
 {
@@ -14,9 +13,8 @@ namespace CHIKU
 		ZoneScoped;    // Profile this block
 		m_Window.Init();
 		m_Engine.Init(m_Window.GetWindow());
-		Renderer::s_Instance->Init();
-
-		AssetManager::AddAsset(AssetType::Mesh,"models/viking_room.obj");
+		Renderer::Init();
+		AssetManager::AddAsset(AssetType::Model,"Models/Box/Box.gltf");
 	}
 
 	void Application::Run()
@@ -38,7 +36,7 @@ namespace CHIKU
 			FrameMark;
 			m_Window.WindowPoolEvent();
 			m_Engine.BeginFrame();
-			Renderer::s_Instance->Draw();
+			Renderer::Draw();
 			m_Engine.EndFrame();
 		}
 	}
@@ -48,7 +46,7 @@ namespace CHIKU
 		ZoneScoped;
 
 		m_Engine.Wait();
-		Renderer::s_Instance->CleanUp();
+		Renderer::CleanUp();
 		m_Engine.CleanUp();
 	}
 }

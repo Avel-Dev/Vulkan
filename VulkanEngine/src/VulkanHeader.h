@@ -1,7 +1,7 @@
 #pragma once
 
 #define SOURCE_DIR std::string(STR(CHIKU_SRC_PATH))
-#define ASSET_REGISTRY SOURCE_DIR + std::string(STR(Registry/AssetRegistry.yaml)) 
+#define ASSET_REGISTRY SOURCE_DIR + std::string(STR(AssetRegistry.json)) 
 
 #ifdef PLT_WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR

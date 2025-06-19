@@ -1,6 +1,0 @@
-{
-    "default": {
-        "lit": [ "shader/lit.vert", "shader/lit.frag" ],
-        "unlit": [ "shader/unlit.vert", "shader/unlit.frag" ]
-    }
-}

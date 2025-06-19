@@ -9,13 +9,12 @@ endif()
 option(TRACY_ENABLE "" ON)
 option(TRACY_ON_DEMAND "" ON)
 
-add_subdirectory("tools/preprocess")
 add_subdirectory("vendor/glfw")
 add_subdirectory("vendor/glm")
 add_subdirectory("vendor/tracy")
 add_subdirectory("vendor/yaml-cpp")
 add_subdirectory("vendor/tinygltf/tinygltf")
-
+#add_subdirectory("vendor/tinygltf/tinygltf/examples/build-gltf")
 
 include_directories("vendor/tinygltf")
 include_directories("vendor/glfw/include")
@@ -27,7 +26,6 @@ include_directories("vendor/spirv_reflect")
 include_directories("vendor/tracy/public")
 include_directories("vendor/yaml-cpp/include")
 include_directories("src/")
-include_directories("src/Core/")
  
 include_directories($ENV{VULKAN_SDK}/include)
 link_directories($ENV{VULKAN_SDK}/lib)
@@ -66,6 +64,7 @@ PUBLIC
     Tracy::TracyClient
     ${VULKAN_LIB}
     yaml-cpp
+    tinygltf
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

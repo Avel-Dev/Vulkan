@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/VulkanEngine/VulkanEngine.h"
-#include "Core/VulkanEngine/Window.h"
+#include "VulkanEngine/VulkanEngine.h"
+#include "VulkanEngine/Window.h"
 
 namespace CHIKU
 {
