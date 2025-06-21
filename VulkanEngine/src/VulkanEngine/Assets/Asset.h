@@ -67,6 +67,13 @@ namespace CHIKU
 		virtual AssetHandle GetHandle() const final { return m_Handle; }
 		virtual AssetType GetType() const final { return m_Type; }
 
+		virtual void CleanUp()
+		{ 
+			m_Handle = InvalidHandle; 
+			m_Type = AssetType::None; 
+			m_Path.clear(); 
+		}
+
 	public:
 		//This is only to know if the this asset was loaded with data
 		//to check if the handle stored in this class is valid use the AssetManager

@@ -14,7 +14,8 @@ namespace CHIKU
 		m_Window.Init();
 		m_Engine.Init(m_Window.GetWindow());
 		Renderer::Init();
-		AssetManager::AddAsset(AssetType::Model,"Models/Box/Box.gltf");
+		AssetManager::Init();
+		AssetManager::AddModel("Models/Box/Box.gltf");
 	}
 
 	void Application::Run()
@@ -47,6 +48,7 @@ namespace CHIKU
 
 		m_Engine.Wait();
 		Renderer::CleanUp();
+		AssetManager::CleanUp();
 		m_Engine.CleanUp();
 	}
 }

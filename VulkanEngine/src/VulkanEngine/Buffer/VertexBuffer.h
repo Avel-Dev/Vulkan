@@ -7,7 +7,7 @@ namespace CHIKU
 {
 	//GLTF attrute order and name
     constexpr std::array<std::string_view, 8> VertexAttributesArray = {
-        "POSITION", "NORMAL", "TANGENT", "COLOR_0", "TEXCOORD_0", "TEXCOORD_1", "JOINTS_0", "WEIGHTS_0"
+        "POSITION", "NORMAL", "TEXCOORD_0", "TEXCOORD_1", "COLOR_0", "TANGENT" , "JOINTS_0", "WEIGHTS_0"
     };
 
     enum VertexAttributeBits {
@@ -40,7 +40,6 @@ namespace CHIKU
 
     struct VertexAttribute
     {
-        const uint8_t* Data;
         uint32_t Offset = 0; // byte offset within vertex struct
         uint8_t size;
         VertexComponentType ComponentType;
@@ -55,32 +54,32 @@ namespace CHIKU
         std::vector<VertexAttribute> VertexElements;
     };
 
-    struct VertexAttributeInfoData
+    struct VertexBufferMetaData
     {
-        int32_t Count;            // number of vertices
+        uint64_t Count;            // number of vertices
         VertexBufferLayout Layout;
     };
 
 	class VertexBuffer
 	{
     public:
-        void SetBinding(uint32_t binding) { m_Binding = binding; }
         void CreateVertexBuffer(const std::vector<uint8_t>& vertices);
+        void Bind() const;
+        void CleanUp();
+
+        void SetBinding(uint32_t binding) { m_Binding = binding; }
+		void SetMetaData(const VertexBufferMetaData& metaData) { m_MetaData = metaData; }
 
         inline VkVertexInputBindingDescription GetBindingDescription() { return m_BindingDescription; }
         inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() { return m_AttributeDescription; }
 
-        void Bind() const;
-        void CleanUp();
+    private:
+        void PrepareBindingDescription(const VertexBufferMetaData& bufferLayout);
+        void PrepareAttributeDescriptions(const VertexBufferMetaData& bufferLayout);
 
     private:
-        void PrepareBindingDescription(const VertexBufferLayout& bufferLayout);
-        void PrepareAttributeDescriptions(const VertexBufferLayout& bufferLayout);
-
-    private:
-        VertexBufferLayout m_Layout;
-
         uint32_t m_Binding = 0;
+        VertexBufferMetaData m_MetaData;
         VkBuffer m_VertexBuffer;
         VkDeviceMemory m_VertexBufferMemory;
         VkVertexInputBindingDescription m_BindingDescription;

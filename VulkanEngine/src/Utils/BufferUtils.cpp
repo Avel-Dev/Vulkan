@@ -50,7 +50,7 @@ namespace CHIKU
 			vkBindBufferMemory(VulkanEngine::GetDevice(), buffer, bufferMemory, 0);
 		}
 
-        size_t GetAttributeSize(VertexComponentType componentType, VertexAttributeType type)
+        size_t GetAttributeSize(const VertexComponentType& componentType, const VertexAttributeType& type)
         {
             ZoneScoped;
 
@@ -89,7 +89,7 @@ namespace CHIKU
             layout.Stride = offset;
         }
 
-        VkFormat GetVkFormat(VertexComponentType component, VertexAttributeType attribute)
+        VkFormat GetVkFormat(const VertexComponentType& component, const VertexAttributeType& attribute)
         {
             using VCT = VertexComponentType;
             using VAT = VertexAttributeType;

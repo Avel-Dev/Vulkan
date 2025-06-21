@@ -1,5 +1,6 @@
 #include "ModelAsset.h"
 #include "MeshAsset.h"
+#include "AssetManager.h"
 #include "Utils/ModelUtils.h"
 #include "Utils/BufferUtils.h"
 #include <tinygltf/tiny_gltf.h>
@@ -50,10 +51,10 @@ namespace CHIKU
         }
     }
 
-    
-
 	bool ModelAsset::LoadModel(const AssetPath& path)
 	{
+        ZoneScoped;
+
 		tinygltf::Model model;
 		tinygltf::TinyGLTF loader;
 		std::string err, warn;
@@ -64,13 +65,19 @@ namespace CHIKU
 		if (!warn.empty()) std::cout << "Warn: " << warn << "\n";
 		if (!err.empty()) std::cerr << "Err: " << err << "\n";
 
-        std::vector<VertexAttributeInfoData> info = Utils::GetVertexLayout(model);
+        std::vector<Utils::GLTFVertexBufferMetaData> info = Utils::GetVertexLayout(model);
 
         std::vector<std::vector<uint8_t>> data(info.size());
 
-        for (int i = 0; i < info.size(); i++) 
+        int n = info.size();
+        for (int i = 0; i < n; i++) 
         {
             Utils::CreateVertexData(info[i], data[i]);
+        }
+        
+        for (int i = 0; i < n; i++)
+        {
+            AssetManager::AddMesh(Utils::ConvertGLTFInfoToVertexInfo(info[i]), data[i]);
         }
 
         /*

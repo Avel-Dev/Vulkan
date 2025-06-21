@@ -6,9 +6,23 @@ namespace CHIKU
 {
     namespace Utils
     {
-        std::vector<VertexAttributeInfoData> GetVertexLayout(const tinygltf::Model& model)
+        void FinalizeLayout(GLTFVertexBufferLayout& layout)
         {
-            std::vector<VertexAttributeInfoData> layouts;
+            ZoneScoped;
+
+            uint32_t offset = 0;
+            for (auto& attr : layout.VertexElements)
+            {
+                attr.Offset = offset;
+                attr.size = static_cast<uint32_t>(GetAttributeSize(attr.ComponentType, attr.AttributeType));
+                offset += attr.size;
+            }
+            layout.Stride = offset;
+        }
+
+        std::vector<GLTFVertexBufferMetaData> GetVertexLayout(const tinygltf::Model& model)
+        {
+            std::vector<GLTFVertexBufferMetaData> layouts;
             layouts.resize(model.meshes.size());
             int i = 0;
 
@@ -28,9 +42,9 @@ namespace CHIKU
             return layouts;
         }
 
-        VertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive)
+        GLTFVertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive)
         {
-            VertexBufferLayout layout;
+            GLTFVertexBufferLayout layout;
             auto& mask = layout.mask;
 
             int i = 0;
@@ -101,7 +115,7 @@ namespace CHIKU
             return layout;
         }
 
-        void CreateVertexData(const VertexAttributeInfoData& infoData, std::vector<uint8_t>& outBuffer)
+        void CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer)
         {
             outBuffer.resize(infoData.Count * infoData.Layout.Stride);
 
@@ -141,7 +155,7 @@ namespace CHIKU
             }
         }
 
-        void PrintVertexData(const std::vector<uint8_t>& buffer, const VertexAttributeInfoData& infoData)
+        void PrintVertexData(const std::vector<uint8_t>& buffer, const GLTFVertexBufferMetaData& infoData)
         {
             for (int i = 0; i < infoData.Count; ++i)
             {
@@ -167,6 +181,28 @@ namespace CHIKU
 
                 std::cout << "\n";
             }
+        }
+
+        VertexBufferMetaData ConvertGLTFInfoToVertexInfo(const GLTFVertexBufferMetaData& gltfInfo)
+        {
+            VertexBufferMetaData result;
+            result.Count = gltfInfo.Count;
+            result.Layout.Stride = gltfInfo.Layout.Stride;
+            result.Layout.mask = gltfInfo.Layout.mask;
+
+            result.Layout.VertexElements.reserve(gltfInfo.Layout.VertexElements.size());
+            for (const auto& attr : gltfInfo.Layout.VertexElements)
+            {
+                VertexAttribute convertedAttr;
+                convertedAttr.Offset = attr.Offset;
+                convertedAttr.size = attr.size;
+                convertedAttr.ComponentType = attr.ComponentType;
+                convertedAttr.AttributeType = attr.AttributeType;
+
+                result.Layout.VertexElements.push_back(convertedAttr);
+            }
+
+            return result;
         }
 
     }

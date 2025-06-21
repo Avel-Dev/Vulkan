@@ -49,26 +49,28 @@ namespace CHIKU
         vkFreeMemory(VulkanEngine::GetDevice(), m_VertexBufferMemory, nullptr);
     }
 
-    void VertexBuffer::PrepareBindingDescription(const VertexBufferLayout& bufferLayout)
+    void VertexBuffer::PrepareBindingDescription(const VertexBufferMetaData& bufferLayout)
     {
         ZoneScoped;
 
         m_BindingDescription.binding = m_Binding;
-        m_BindingDescription.stride = bufferLayout.Stride;
+        m_BindingDescription.stride = bufferLayout.Layout.Stride;
         m_BindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     }
 
-    void VertexBuffer::PrepareAttributeDescriptions(const VertexBufferLayout& bufferLayout)
+    void VertexBuffer::PrepareAttributeDescriptions(const VertexBufferMetaData& metaData)
     {
         ZoneScoped;
 
-        m_AttributeDescription.resize(bufferLayout.VertexElements.size());
+		const auto& layout = metaData.Layout;
+
+        m_AttributeDescription.resize(layout.VertexElements.size());
 
         for (int i = 0; i < m_AttributeDescription.size(); i++)
         {
-            auto& componentType = bufferLayout.VertexElements[i].ComponentType;
-            auto& attributeType = bufferLayout.VertexElements[i].AttributeType;
-            auto& offset = bufferLayout.VertexElements[i].Offset;
+            const auto& componentType = layout.VertexElements[i].ComponentType;
+            const auto& attributeType = layout.VertexElements[i].AttributeType;
+            const auto& offset = layout.VertexElements[i].Offset;
 
             m_AttributeDescription[i].binding = 0;
             m_AttributeDescription[i].location = i;

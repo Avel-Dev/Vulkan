@@ -4,13 +4,40 @@
 
 namespace CHIKU
 {
-	struct VertexAttributeInfoData;
+	struct VertexBufferMetaData;
 	
 	namespace Utils
 	{
-        std::vector<VertexAttributeInfoData> GetVertexLayout(const tinygltf::Model& model);
-		VertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive);
-		void CreateVertexData(const VertexAttributeInfoData& infoData, std::vector<uint8_t>& outBuffer);
-		void PrintVertexData(const std::vector<uint8_t>& buffer, const VertexAttributeInfoData& infoData);
+        struct GLTFVertexAttribute
+        {
+            const uint8_t* Data;
+            uint32_t Offset = 0; // byte offset within vertex struct
+            uint8_t size;
+            VertexComponentType ComponentType;
+            VertexAttributeType AttributeType;
+            //1 byte can be squeezed in here 
+        };
+
+        struct GLTFVertexBufferLayout
+        {
+            uint32_t Stride;
+            std::bitset<ATTR_COUNT> mask;
+            std::vector<GLTFVertexAttribute> VertexElements;
+        };
+
+        struct GLTFVertexBufferMetaData
+        {
+            uint64_t Count;            // number of vertices
+            GLTFVertexBufferLayout Layout;
+        };
+
+        void FinalizeLayout(GLTFVertexBufferLayout& layout);
+        std::vector<GLTFVertexBufferMetaData> GetVertexLayout(const tinygltf::Model& model);
+		GLTFVertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive);
+		
+        void CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer);
+		void PrintVertexData(const std::vector<uint8_t>& buffer, const GLTFVertexBufferMetaData& infoData);
+
+        VertexBufferMetaData ConvertGLTFInfoToVertexInfo(const GLTFVertexBufferMetaData& gltfInfo);
 	}
 }

@@ -1,5 +1,6 @@
 #include "AssetManager.h"
 #include "ModelAsset.h"
+#include "MeshAsset.h"
 #include "Utils/Utils.h"
 #include <iostream>
 #include <fstream>
@@ -29,35 +30,36 @@ namespace CHIKU
 		return nullptr;
 	}
 
-	AssetHandle AssetManager::AddAsset(AssetType type, const std::string& path)
+	AssetHandle AssetManager::AddModel(const std::string& path)
 	{
 		ZoneScoped;
-		
 		AssetHandle newHandle = Utils::GetRandomNumber<AssetHandle>();
-
-		switch (type)
-		{
-		case CHIKU::AssetType::None:
-			break;
-		case CHIKU::AssetType::Texture2D:
-			break;
-		case CHIKU::AssetType::TextureCube:
-			break;
-		case CHIKU::AssetType::Model:
-			m_Assets[newHandle] = std::make_shared<ModelAsset>( newHandle, path);
-			break;
-		case CHIKU::AssetType::Shader:
-			break;
-		case CHIKU::AssetType::Material:
-			break;
-		case CHIKU::AssetType::Mesh:
-			break;
-		case CHIKU::AssetType::Sound:
-			break;
-		default:
-			break;
-		}
+		m_Assets[newHandle] = std::make_shared<ModelAsset>( newHandle, path);
 
 		return newHandle;
+	}
+
+	AssetHandle AssetManager::AddMesh(const VertexBufferMetaData& metaData ,const std::vector<uint8_t>& data)
+	{
+		ZoneScoped;
+
+		AssetHandle newHandle = Utils::GetRandomNumber<AssetHandle>();
+		m_Assets[newHandle] = std::make_shared<MeshAsset>(newHandle);
+		std::shared_ptr<MeshAsset> meshAsset = std::static_pointer_cast<MeshAsset>(m_Assets[newHandle]);
+
+		meshAsset->SetMetaData(metaData);
+		meshAsset->SetData(data);
+
+		return newHandle;
+	}
+
+	void AssetManager::CleanUp()
+	{
+		ZoneScoped;
+		for (auto& asset : m_Assets)
+		{
+			asset.second->CleanUp();
+		}
+		m_Assets.clear();
 	}
 }
