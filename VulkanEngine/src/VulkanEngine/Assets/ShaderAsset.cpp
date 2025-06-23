@@ -1,27 +1,22 @@
-#include "Shader.h"
-#include "VulkanEngine/VulkanEngine.h"
-#include <iostream>
+#include "ShaderAsset.h"
+#include <unordered_map>
 #include <fstream>
 #include <json.hpp>
-#include <spirv_reflect.h>
+#include <iostream>
 
 namespace CHIKU
 {
-    std::unordered_map<std::string, ShaderManager::ShaderProgram> ShaderManager::sm_ShaderPrograms;
+    std::unordered_map<std::string, ShaderAsset::ShaderProgram> ShaderAsset::sm_ShaderPrograms;
 
-    ShaderManager::~ShaderManager() 
+    ShaderAsset::~ShaderAsset()
     {
         ZoneScoped;
+        Asset::~Asset();
 
-        Cleanup();
+        ShaderAsset::CleanUp();
     }
 
-    void ShaderManager::Init()
-    {
-        ZoneScoped;
-    }
-
-    std::vector<char> ShaderManager::ReadFile(const std::string& filePath) 
+    std::vector<char> ShaderAsset::ReadFile(const std::string& filePath)
     {
         ZoneScoped;
 
@@ -41,7 +36,7 @@ namespace CHIKU
         return buffer;
     }
 
-    VkShaderModule ShaderManager::CreateShaderModule(const std::vector<char>& code) 
+    VkShaderModule ShaderAsset::CreateShaderModule(const std::vector<char>& code)
     {
         ZoneScoped;
 
@@ -51,7 +46,7 @@ namespace CHIKU
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(VulkanEngine::GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) 
+        if (vkCreateShaderModule(VulkanEngine::GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create shader module");
         }
@@ -59,7 +54,7 @@ namespace CHIKU
         return shaderModule;
     }
 
-    bool ShaderManager::GetShaderPath(const std::filesystem::path& ID, std::vector<std::string>& shaderPaths)
+    bool ShaderAsset::GetShaderPath(const std::filesystem::path& ID, std::vector<std::string>& shaderPaths)
     {
         ZoneScoped;
 
@@ -130,7 +125,7 @@ namespace CHIKU
         return 1;
     }
 
-    bool ShaderManager::CreateShaderProgram(const std::filesystem::path& ID)
+    bool ShaderAsset::CreateShaderProgram(const std::filesystem::path& ID)
     {
         ZoneScoped;
 
@@ -141,7 +136,7 @@ namespace CHIKU
 
         std::vector<std::string> shaderPaths;
 
-        if (!GetShaderPath(ID,shaderPaths))
+        if (!GetShaderPath(ID, shaderPaths))
         {
             return false;
         }
@@ -187,8 +182,8 @@ namespace CHIKU
         return true;
     }
 
-    const std::vector<VkPipelineShaderStageCreateInfo>& ShaderManager::GetShaderStages(const std::filesystem::path& ID)
-    {   
+    const std::vector<VkPipelineShaderStageCreateInfo>& ShaderAsset::GetShaderStages(const std::filesystem::path& ID)
+    {
         ZoneScoped;
 
         if (!CreateShaderProgram(ID))
@@ -199,13 +194,13 @@ namespace CHIKU
         return sm_ShaderPrograms[ID.string()].Stages;
     }
 
-    void ShaderManager::Cleanup() 
+    void ShaderAsset::CleanUp()
     {
         ZoneScoped;
 
-        for (auto& [_, program] : sm_ShaderPrograms) 
+        for (auto& [_, program] : sm_ShaderPrograms)
         {
-            for (auto& [_,module] : program.ShaderModules)
+            for (auto& [_, module] : program.ShaderModules)
             {
                 vkDestroyShaderModule(VulkanEngine::GetDevice(), module, nullptr);
             }
@@ -213,7 +208,7 @@ namespace CHIKU
         sm_ShaderPrograms.clear();
     }
 
-    bool ShaderManager::CreateSPIRV(const std::string& a_ShaderPath, const std::string& a_OutPutPath)
+    bool ShaderAsset::CreateSPIRV(const std::string& a_ShaderPath, const std::string& a_OutPutPath)
     {
         ZoneScoped;
 

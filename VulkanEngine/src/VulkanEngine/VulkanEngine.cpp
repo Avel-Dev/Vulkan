@@ -3,7 +3,6 @@
 #include "Buffer/UniformBuffer.h"
 #include "Buffer/VertexBuffer.h"
 #include "Buffer/IndexBuffer.h"
-#include "Shader/Shader.h"
 
 #include <iostream>
 #include <cstring>
@@ -45,10 +44,6 @@ namespace CHIKU
 		{
 			throw std::runtime_error("GLFWwindow is required for Vulkan Engine");
 		}
-
-		ShaderManager::Init();
-		ShaderManager::Init();
-		//UniformBuffer::Init();
 
 		GetRequiredExtensions();
 		CreateInstance();

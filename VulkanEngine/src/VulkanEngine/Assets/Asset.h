@@ -54,8 +54,6 @@ namespace CHIKU
 	class Asset
 	{
 	public:
-		static Asset CreateAsset(AssetHandle handle, AssetType type, AssetPath path);
-
 		static constexpr uint64_t InvalidHandle = std::numeric_limits<uint64_t>::max();
 
 		Asset() : m_Handle(InvalidHandle), m_Type(AssetType::None) {}
@@ -74,6 +72,7 @@ namespace CHIKU
 			m_Path.clear(); 
 		}
 
+		virtual ~Asset() { CleanUp(); }
 	public:
 		//This is only to know if the this asset was loaded with data
 		//to check if the handle stored in this class is valid use the AssetManager

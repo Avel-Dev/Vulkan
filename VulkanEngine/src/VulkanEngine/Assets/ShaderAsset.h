@@ -1,14 +1,16 @@
 #pragma once
-#include "VulkanHeader.h"
-#include "VulkanEngine/Buffer/VertexBuffer.h"
-#include <variant>
-#include <filesystem>
+#include "Asset.h"
+#include "VulkanEngine/VulkanEngine.h"
 
 namespace CHIKU
 {
-    class ShaderManager 
+	class ShaderAsset : public Asset
     {
     public:
+        ShaderAsset() : Asset(AssetType::Shader) {}
+        ShaderAsset(AssetHandle handle) : Asset(handle, AssetType::Shader) {}
+        ShaderAsset(AssetHandle handle, AssetPath path) : Asset(handle, AssetType::Shader, path) {}
+
         enum class ShaderStages
         {
             Vertex,
@@ -18,13 +20,11 @@ namespace CHIKU
             Compute
         };
 
-        ~ShaderManager();
-
-        static void Init();
+        virtual ~ShaderAsset();
 
         static bool CreateShaderProgram(const std::filesystem::path& ID);
-        static const std::vector<VkPipelineShaderStageCreateInfo>& GetShaderStages(const std::filesystem::path& ID) ;
-        static void Cleanup();
+        static const std::vector<VkPipelineShaderStageCreateInfo>& GetShaderStages(const std::filesystem::path& ID);
+        static void CleanUp();
 
     private:
         static bool GetShaderPath(const std::filesystem::path& ID, std::vector<std::string>& shaderPaths);
@@ -33,7 +33,7 @@ namespace CHIKU
 
         static std::vector<char> ReadFile(const std::string& filename);
 
-        struct ShaderProgram 
+        struct ShaderProgram
         {
             std::map<ShaderStages, VkShaderModule> ShaderModules{};
             std::vector<VkPipelineShaderStageCreateInfo> Stages{};

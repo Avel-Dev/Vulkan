@@ -14,14 +14,6 @@ namespace CHIKU
 		MaterialAsset(AssetHandle handle, AssetPath path) : Asset(handle, AssetType::Material, path) {}
 	};
 
-	class ShaderAsset : public Asset
-	{
-	public:
-		ShaderAsset() : Asset(AssetType::Shader) {}
-		ShaderAsset(AssetHandle handle) : Asset(handle, AssetType::Shader) {}
-		ShaderAsset(AssetHandle handle, AssetPath path) : Asset(handle, AssetType::Shader, path) {}
-	};
-
 	class ModelAsset : public Asset
 	{
 	public:

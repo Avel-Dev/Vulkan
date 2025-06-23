@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Renderer/Renderer.h"
 #include "VulkanEngine/Assets/AssetManager.h"
+#include "Utils/ShaderUtils.h"
 
 namespace CHIKU
 {
@@ -11,6 +12,9 @@ namespace CHIKU
 	void Application::Init()
 	{
 		ZoneScoped;    // Profile this block
+	
+		Utils::LoadSPIRV(SOURCE_DIR + "src/VulkanEngine/Shader/unlit.vert.spv");
+
 		m_Window.Init();
 		m_Engine.Init(m_Window.GetWindow());
 		Renderer::Init();

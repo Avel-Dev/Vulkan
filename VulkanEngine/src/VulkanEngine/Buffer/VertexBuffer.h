@@ -79,9 +79,9 @@ namespace CHIKU
 
     private:
         uint32_t m_Binding = 0;
-        VertexBufferMetaData m_MetaData;
         VkBuffer m_VertexBuffer;
         VkDeviceMemory m_VertexBufferMemory;
+        VertexBufferMetaData m_MetaData;
         VkVertexInputBindingDescription m_BindingDescription;
         std::vector<VkVertexInputAttributeDescription> m_AttributeDescription;
 	};

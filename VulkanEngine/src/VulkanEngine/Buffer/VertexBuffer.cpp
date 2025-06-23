@@ -30,6 +30,9 @@ namespace CHIKU
 
         vkDestroyBuffer(VulkanEngine::GetDevice(), stagingBuffer, nullptr);
         vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
+
+        PrepareBindingDescription(m_MetaData);
+		PrepareAttributeDescriptions(m_MetaData);
     }
 
     void VertexBuffer::Bind() const

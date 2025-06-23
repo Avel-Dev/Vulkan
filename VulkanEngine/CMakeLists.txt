@@ -33,6 +33,7 @@ link_directories($ENV{VULKAN_SDK}/lib)
 file(GLOB VENDOR_SOURCES "vendor/**/*.cpp" "vendor/**/*.h")
 file(GLOB_RECURSE SRC_SOURCES "src/**/*.cpp" "src/*.cpp")
 file(GLOB_RECURSE SRC_HEADERS "src/**/*.h" "src/*.h")
+file(GLOB VENDOR_C_SOURCES "vendor/**/*.c")
 
 add_executable(VulkanEngine
     ${VENDOR_SOURCES}
