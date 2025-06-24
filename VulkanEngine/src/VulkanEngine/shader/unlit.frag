@@ -1,3 +1,6 @@
+//Name: Unlit
+//Type: Fragment
+
 #version 450
 
 layout(set = 2, binding = 0) uniform sampler2D Diffuse_texture;  // Input from vertex shader

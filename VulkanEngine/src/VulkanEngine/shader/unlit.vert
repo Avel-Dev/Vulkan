@@ -1,5 +1,7 @@
-#version 450
+//Name: Unlit
+//Type: Vertex
 
+#version 450
 
 layout(set = 0,binding = 0) uniform UniformBufferObject {
     mat4 u_Model;

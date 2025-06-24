@@ -1,11 +1,12 @@
 #pragma once
 #include "VulkanEngine/Buffer/VertexBuffer.h"
+#include "VulkanEngine/Assets/Asset.h"
 #include <tinygltf/tiny_gltf.h>
 
 namespace CHIKU
 {
 	struct VertexBufferMetaData;
-	
+    
 	namespace Utils
 	{
         struct GLTFVertexAttribute
@@ -39,5 +40,7 @@ namespace CHIKU
 		void PrintVertexData(const std::vector<uint8_t>& buffer, const GLTFVertexBufferMetaData& infoData);
 
         VertexBufferMetaData ConvertGLTFInfoToVertexInfo(const GLTFVertexBufferMetaData& gltfInfo);
+        bool IsGLTFFormat(const AssetPath& path);
+        AssetPath ConvertToGLTF(const AssetPath& modelAsset);
 	}
 }

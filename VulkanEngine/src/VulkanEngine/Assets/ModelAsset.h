@@ -2,17 +2,12 @@
 #include "Asset.h"
 #include "VulkanEngine/Buffer/VertexBuffer.h"
 #include "VulkanEngine/Buffer/IndexBuffer.h"
+#include <tinygltf/tiny_gltf.h>
 #include <unordered_map>
 
 namespace CHIKU
 {
-	class MaterialAsset : public Asset
-	{
-	public:
-		MaterialAsset() : Asset(AssetType::Material) {}
-		MaterialAsset(AssetHandle handle) : Asset(handle, AssetType::Material) {}
-		MaterialAsset(AssetHandle handle, AssetPath path) : Asset(handle, AssetType::Material, path) {}
-	};
+	
 
 	class ModelAsset : public Asset
 	{
@@ -23,6 +18,9 @@ namespace CHIKU
 		{
 			LoadModel(path);
 		}
+
+		void CreateMeshes(const tinygltf::Model& model);
+		void CreateMaterials(const tinygltf::Model& model);
 
 		bool LoadModel(const AssetPath& path);
 

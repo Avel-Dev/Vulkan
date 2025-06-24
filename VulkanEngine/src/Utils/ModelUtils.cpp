@@ -205,5 +205,47 @@ namespace CHIKU
             return result;
         }
 
+        bool IsGLTFFormat(const AssetPath& path)
+        {
+            std::string ext = path.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            return ext == ".gltf" || ext == ".glb";
+        }
+
+        AssetPath ConvertToGLTF(const AssetPath& modelAsset)
+        {
+            if (Utils::IsGLTFFormat(modelAsset))
+            {
+                return modelAsset;
+            }
+
+            ZoneScoped;
+
+            std::string stem = modelAsset.stem().string();
+            AssetPath gltfPath = SOURCE_DIR + "Models/" + (stem + ".gltf");
+
+            // Build the command
+            std::string command = (SOURCE_DIR + "tools/FBX2glTF.exe")
+                + " --input \"" + SOURCE_DIR + modelAsset.string() + "\""
+                + " --output \"" + gltfPath.string() + "\"";
+
+            int result = std::system(command.c_str());
+
+            if (result != 0)
+            {
+                std::cerr << "FBX2glTF failed with exit code: " << result << std::endl;
+                return "";
+            }
+
+            if (std::filesystem::exists(gltfPath))
+            {
+                return gltfPath;
+            }
+            else
+            {
+                std::cerr << "Output file not found after conversion." << std::endl;
+                return "";
+            }
+        }
     }
 }

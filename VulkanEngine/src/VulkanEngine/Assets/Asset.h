@@ -6,6 +6,7 @@ namespace CHIKU
 {
 	using AssetHandle = uint64_t;
 	using AssetPath = std::filesystem::path;
+	using ShaderHandle = std::string;
 
 	enum class AssetType : int8_t
 	{

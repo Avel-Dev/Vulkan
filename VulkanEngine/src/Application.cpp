@@ -13,13 +13,16 @@ namespace CHIKU
 	{
 		ZoneScoped;    // Profile this block
 	
-		Utils::LoadSPIRV(SOURCE_DIR + "src/VulkanEngine/Shader/unlit.vert.spv");
 
 		m_Window.Init();
 		m_Engine.Init(m_Window.GetWindow());
 		Renderer::Init();
 		AssetManager::Init();
+		AssetManager::AddShader({ "src/VulkanEngine/Shader/unlit.vert", "src/VulkanEngine/Shader/unlit.frag" });
 		AssetManager::AddModel("Models/Box/Box.gltf");
+
+		//std::vector<uint32_t> temp = Utils::LoadSPIRV(SOURCE_DIR + "src/VulkanEngine/Shader/unlit.vert.spv");
+		//std::vector<uint32_t> temp2 = Utils::LoadSPIRV(SOURCE_DIR + "src/VulkanEngine/Shader/unlit.frag.spv");
 	}
 
 	void Application::Run()

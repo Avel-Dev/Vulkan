@@ -111,7 +111,7 @@ namespace CHIKU
                 }
             }
 
-
+			return spirv;
         }
 	}
 }
