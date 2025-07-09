@@ -28,7 +28,7 @@ namespace CHIKU
         vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
     }
 
-    void IndexBuffer::Bind()
+    void IndexBuffer::Bind() const
     {
         ZoneScoped;
 

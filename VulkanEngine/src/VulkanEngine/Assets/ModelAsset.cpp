@@ -46,11 +46,9 @@ namespace CHIKU
 			const auto& [pipeline, pipelineLayout] = GraphicsPipeline::GetPipeline(material, mesh);
 
 			material->Bind(pipelineLayout);
-			mesh->Bind();
-
 			vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-			vkCmdDraw(VulkanEngine::GetCommandBuffer(), mesh->GetVertexCount(), 1, 0, 0);
+			mesh->Bind();
+			mesh->Draw();
 		}
 	}
 }

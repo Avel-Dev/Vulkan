@@ -12,7 +12,7 @@ namespace CHIKU
 	public:
 		static std::shared_ptr<Asset> LoadAsset(const AssetHandle& assetHandle);
 		static AssetHandle AddModel(const AssetPath& path);
-		static AssetHandle AddMesh(const VertexBufferMetaData& metaData, const std::vector<uint8_t>& data);
+		static AssetHandle AddMesh(const VertexBufferMetaData& metaData, const std::vector<uint8_t>& data, const std::vector<uint32_t>& indices);
 		static AssetHandle AddMaterial(const AssetPath& path);
 		static AssetHandle AddShader(const std::vector<AssetPath>& path);
 		

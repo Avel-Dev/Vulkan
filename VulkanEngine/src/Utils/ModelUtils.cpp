@@ -24,6 +24,44 @@ namespace CHIKU
             layout.Stride = offset;
         }
 
+        std::vector<uint32_t> CreateIndices(const tinygltf::Model& model, const tinygltf::Primitive& primitive)
+        {
+			std::vector<uint32_t> indices;
+            const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+            const tinygltf::BufferView& bufferView = model.bufferViews[indexAccessor.bufferView];
+            const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+            const size_t byteOffset = bufferView.byteOffset + indexAccessor.byteOffset;
+            const unsigned char* dataPtr = buffer.data.data() + byteOffset;
+
+            for (size_t i = 0; i < indexAccessor.count; ++i)
+            {
+                uint32_t index = 0;
+
+                switch (indexAccessor.componentType)
+                {
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    index = reinterpret_cast<const uint16_t*>(dataPtr)[i];
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                    index = reinterpret_cast<const uint32_t*>(dataPtr)[i];
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    index = reinterpret_cast<const uint8_t*>(dataPtr)[i];
+                    break;
+                default:
+                    std::cerr << "Unsupported index component type!" << std::endl;
+                    break;
+                }
+
+                std::cout << "Index[" << i << "] = " << index << std::endl;
+
+				indices.push_back(index);
+            }
+
+			return indices;
+        }
+
         std::string SelectShaderFromMaterial(const tinygltf::Material& mat)
         {
             ZoneScoped;
@@ -157,6 +195,13 @@ namespace CHIKU
             {
                 for (auto& primitive : mesh.primitives)
                 {
+
+					std::vector<uint32_t> indices;
+                    if (primitive.indices >= 0)
+                    {
+						indices = CreateIndices(model, primitive);
+                    }
+
                     int materialIndex = primitive.material;
 
                     if (materialIndex >= 0 && materialIndex < model.materials.size()) 
@@ -170,14 +215,14 @@ namespace CHIKU
                     auto it = primitive.attributes.find(std::string(VertexAttributesArray[0])); // POSITION
                     if (it == primitive.attributes.end()) continue;
 
-                    layout.Count = model.accessors[it->second].count;
+					layout.Count = model.accessors[it->second].count;
                     layout.Layout = CreateBufferLayout(model, primitive);
                     FinalizeLayout(layout.Layout);
                     CreateVertexData(layout, data); // fill the data vector with vertex data
-                    
+
 					Utils::PrintVertexData(data, layout); // Print vertex data for debugging
 
-                    meshHandle = AssetManager::AddMesh(Utils::ConvertGLTFInfoToVertexInfo(layout), data); // add the mesh to the asset manager   
+                    meshHandle = AssetManager::AddMesh(Utils::ConvertGLTFInfoToVertexInfo(layout), data, indices); // add the mesh to the asset manager   
 
                     data.clear();
                     data.shrink_to_fit();

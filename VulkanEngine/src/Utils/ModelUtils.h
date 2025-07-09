@@ -34,6 +34,8 @@ namespace CHIKU
 
         void FinalizeLayout(GLTFVertexBufferLayout& layout);
 
+		std::vector<uint32_t> CreateIndices(const tinygltf::Model& model, const tinygltf::Primitive& primitive);
+
         std::string SelectShaderFromMaterial(const tinygltf::Material& mat);
         AssetHandle CreateMaterials(int index, const tinygltf::Model& model, const tinygltf::Material& mat, const AssetPath& outputPath);
         bool ProcessModel(const tinygltf::Model& model, std::unordered_map<AssetHandle, AssetHandle>& meshMaterial);

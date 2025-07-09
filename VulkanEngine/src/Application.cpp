@@ -1,8 +1,9 @@
 #include "Application.h"
-#include "VulkanEngine/Assets/ModelAsset.h"
 #include "Renderer/Renderer.h"
-#include "VulkanEngine/Assets/AssetManager.h"
 #include "Utils/ShaderUtils.h"
+#include "VulkanEngine/GraphicsPipeline.h"
+#include "VulkanEngine/Assets/ModelAsset.h"
+#include "VulkanEngine/Assets/AssetManager.h"
 
 namespace CHIKU
 {
@@ -17,7 +18,7 @@ namespace CHIKU
 
 		AssetManager::AddShader({ "Shaders/Unlit/unlit.vert", "Shaders/Unlit/unlit.frag" });
 		AssetManager::AddShader({ "Shaders/Defaultlit/defaultlit.vert", "Shaders/Defaultlit/defaultlit.frag" });
-		AssetHandle model = AssetManager::AddModel("Models/Box2/Box.gltf");
+		AssetHandle model = AssetManager::AddModel("Models/Box/Box.gltf");
 
 		std::shared_ptr<Asset> asset = AssetManager::GetAsset(model);
 		m_Model = std::dynamic_pointer_cast<ModelAsset>(asset);
@@ -56,6 +57,7 @@ namespace CHIKU
 		m_Engine.Wait();
 		Renderer::CleanUp();
 		AssetManager::CleanUp();
+		GraphicsPipeline::CleanUp();
 		m_Engine.CleanUp();
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Asset.h"
 #include "VulkanEngine/Buffer/VertexBuffer.h"
+#include "VulkanEngine/Buffer/IndexBuffer.h"
 #include <tinygltf/tiny_gltf.h>
 #include <iostream>
 
@@ -13,8 +14,9 @@ namespace CHIKU
 		MeshAsset(AssetHandle handle) : Asset(handle, AssetType::Mesh) {}
 		MeshAsset(AssetHandle handle, AssetPath path) : Asset(handle, AssetType::Mesh, path) {}
 		
-		virtual void SetMetaData(VertexBufferMetaData metaData) final { m_VertexBuffer.SetMetaData(metaData); }
-		virtual void SetData(const std::vector<uint8_t>& data) final { m_VertexBuffer.CreateVertexBuffer(data); }
+		void SetMetaData(VertexBufferMetaData metaData) { m_VertexBuffer.SetMetaData(metaData); }
+		void SetData(const std::vector<uint8_t>& data) { m_VertexBuffer.CreateVertexBuffer(data); }
+		void SetIndexData(const std::vector<uint32_t>& indices) { m_IndexBuffer.CreateIndexBuffer(indices); }
 
 		virtual void CleanUp() override
 		{
@@ -22,12 +24,14 @@ namespace CHIKU
 			Asset::CleanUp();
 		}
 		
-		uint32_t GetVertexCount() const { return m_VertexBuffer.GetCount(); }
+		inline uint32_t GetVertexCount() const { return m_VertexBuffer.GetCount(); }
 
-		VertexBuffer GetVertexBuffer() const { return m_VertexBuffer; }
-		void Bind() const { m_VertexBuffer.Bind(); };
+		inline VertexBuffer GetVertexBuffer() const { return m_VertexBuffer; }
+		inline void Bind() const { m_VertexBuffer.Bind(); };
+		void Draw() const;
 
 	private:
 		VertexBuffer m_VertexBuffer;
+		IndexBuffer m_IndexBuffer;
 	};
 }

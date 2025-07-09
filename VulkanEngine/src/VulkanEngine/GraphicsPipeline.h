@@ -40,13 +40,12 @@ namespace CHIKU
 	public:
 		GraphicsPipeline() = default;
 		
-		static std::pair<VkPipeline, VkPipelineLayout> CreatePipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const VkVertexInputBindingDescription& bindingDescription,const std::vector<VkVertexInputAttributeDescription>& attributeDescription);
-		static void Destroy();
+		static void CleanUp();
 
+		static std::pair<VkPipeline, VkPipelineLayout> CreatePipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const VkVertexInputBindingDescription& bindingDescription,const std::vector<VkVertexInputAttributeDescription>& attributeDescription);
 		static std::pair<VkPipeline, VkPipelineLayout> GetPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset);
 
 	private:
 		static std::unordered_map<PipelineKey, std::pair<VkPipeline,VkPipelineLayout>> m_Pipelines;
-
 	};
 }

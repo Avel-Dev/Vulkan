@@ -162,4 +162,15 @@ namespace CHIKU
 
         return m_Pipelines[key];
     }
+
+    void GraphicsPipeline::CleanUp()
+    {
+        ZoneScoped;
+        for (auto& [key, pipeline] : m_Pipelines)
+        {
+            vkDestroyPipeline(VulkanEngine::GetDevice(), pipeline.first, nullptr);
+            vkDestroyPipelineLayout(VulkanEngine::GetDevice(), pipeline.second, nullptr);
+        }
+        m_Pipelines.clear();
+	}
 }

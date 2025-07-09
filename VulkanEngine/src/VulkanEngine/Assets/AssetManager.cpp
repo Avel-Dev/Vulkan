@@ -44,7 +44,7 @@ namespace CHIKU
 		return newHandle;
 	}
 
-	AssetHandle AssetManager::AddMesh(const VertexBufferMetaData& metaData ,const std::vector<uint8_t>& data)
+	AssetHandle AssetManager::AddMesh(const VertexBufferMetaData& metaData ,const std::vector<uint8_t>& data, const std::vector<uint32_t>& indices)
 	{
 		ZoneScoped;
 
@@ -55,6 +55,9 @@ namespace CHIKU
 		meshAsset->SetMetaData(metaData);
 		meshAsset->SetData(data);
 
+		if(!indices.empty())
+			meshAsset->SetIndexData(indices);
+		
 		return newHandle;
 	}
 
