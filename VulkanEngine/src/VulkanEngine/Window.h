@@ -10,6 +10,7 @@ namespace CHIKU
 		static uint32_t HEIGHT;
 
 	public:
+		Window() = default;
 		void Init();
 
 		inline GLFWwindow* GetWindow() { return m_Window; }
@@ -24,6 +25,6 @@ namespace CHIKU
 		void InitWindow();
 
 	private:
-		GLFWwindow* m_Window;
+		GLFWwindow* m_Window = nullptr;
 	};
 }

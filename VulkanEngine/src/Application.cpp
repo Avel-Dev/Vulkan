@@ -1,28 +1,27 @@
 #include "Application.h"
+#include "VulkanEngine/Assets/ModelAsset.h"
 #include "Renderer/Renderer.h"
 #include "VulkanEngine/Assets/AssetManager.h"
 #include "Utils/ShaderUtils.h"
 
 namespace CHIKU
 {
-	Application::Application()
-	{
-	}
-
 	void Application::Init()
 	{
 		ZoneScoped;    // Profile this block
-	
 
 		m_Window.Init();
 		m_Engine.Init(m_Window.GetWindow());
 		Renderer::Init();
 		AssetManager::Init();
-		AssetManager::AddShader({ "src/VulkanEngine/Shader/unlit.vert", "src/VulkanEngine/Shader/unlit.frag" });
-		AssetManager::AddModel("Models/Box/Box.gltf");
 
-		//std::vector<uint32_t> temp = Utils::LoadSPIRV(SOURCE_DIR + "src/VulkanEngine/Shader/unlit.vert.spv");
-		//std::vector<uint32_t> temp2 = Utils::LoadSPIRV(SOURCE_DIR + "src/VulkanEngine/Shader/unlit.frag.spv");
+		AssetManager::AddShader({ "Shaders/Unlit/unlit.vert", "Shaders/Unlit/unlit.frag" });
+		AssetManager::AddShader({ "Shaders/Defaultlit/defaultlit.vert", "Shaders/Defaultlit/defaultlit.frag" });
+		AssetHandle model = AssetManager::AddModel("Models/Box2/Box.gltf");
+
+		std::shared_ptr<Asset> asset = AssetManager::GetAsset(model);
+		m_Model = std::dynamic_pointer_cast<ModelAsset>(asset);
+
 	}
 
 	void Application::Run()
@@ -44,6 +43,7 @@ namespace CHIKU
 			FrameMark;
 			m_Window.WindowPoolEvent();
 			m_Engine.BeginFrame();
+			m_Model->Draw();
 			Renderer::Draw();
 			m_Engine.EndFrame();
 		}

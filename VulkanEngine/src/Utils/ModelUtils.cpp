@@ -1,6 +1,10 @@
 #include "ModelUtils.h"
 #include "BufferUtils.h"
+#include "VulkanEngine/Assets/AssetManager.h"
+#include "VulkanEngine/Assets/ShaderAsset.h"
+#include <fstream>
 #include <iostream>
+#include <json.hpp>
 
 namespace CHIKU
 {
@@ -20,8 +24,174 @@ namespace CHIKU
             layout.Stride = offset;
         }
 
+        std::string SelectShaderFromMaterial(const tinygltf::Material& mat)
+        {
+            ZoneScoped;
+
+            // 1. If it's explicitly marked as unlit
+            if (mat.extensions.find("KHR_materials_unlit") != mat.extensions.end()) {
+                return SHADER_LIT;
+            }
+
+            // 2. Check alphaMode for transparency
+            std::string alphaMode = mat.alphaMode; // May be empty
+            std::transform(alphaMode.begin(), alphaMode.end(), alphaMode.begin(), ::toupper);
+
+            if (alphaMode == "BLEND") {
+                return SHADER_TRANSPARENT_PBR;
+            }
+            else if (alphaMode == "MASK") {
+                return SHADER_MASKED_PBR;
+            }
+
+            // 3. Check for PBR-related textures
+            const auto& pbr = mat.pbrMetallicRoughness;
+            bool hasBaseColor = pbr.baseColorTexture.index >= 0;
+            bool hasMetalRough = pbr.metallicRoughnessTexture.index >= 0;
+            bool hasNormalMap = mat.normalTexture.index >= 0;
+            bool hasEmissive = mat.emissiveTexture.index >= 0;
+
+            if (hasBaseColor || hasMetalRough || hasNormalMap || hasEmissive) {
+                return SHADER_PBR;
+            }
+
+            // 4. Fallback
+            return SHADER_DEFAULT_LIT;
+        }
+
+        AssetHandle CreateMaterials(int index,const tinygltf::Model& model, const tinygltf::Material& mat, const AssetPath& outputPath)
+        {
+            ZoneScoped;
+
+            nlohmann::json materialJson;
+            materialJson["name"] = mat.name.empty() ? "Material" + std::to_string(index) : mat.name;
+            materialJson["shader"] = SelectShaderFromMaterial(mat); // Decide shader based on presence of textures, etc.
+
+            // Hardcoded render config
+            nlohmann::json config;
+            config["depthTest"] = true;
+            config["depthWrite"] = true;
+            config["blendEnabled"] = false;
+            config["cullMode"] = "VK_CULL_MODE_BACK_BIT";
+            config["frontFace"] = "VK_FRONT_FACE_COUNTER_CLOCKWISE";
+            config["polygonMode"] = "VK_POLYGON_MODE_FILL";
+            config["topology"] = "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST";
+            materialJson["Config"] = config;
+
+            // Add material factors
+            if (mat.values.contains("baseColorFactor"))
+            {
+                const auto& color = mat.values.at("baseColorFactor").ColorFactor();
+                materialJson["baseColorFactor"] = { color[0], color[1], color[2], color[3] };
+            }
+
+            if (mat.values.contains("metallicFactor"))
+                materialJson["metallicFactor"] = mat.values.at("metallicFactor").Factor();
+
+            if (mat.values.contains("roughnessFactor"))
+                materialJson["roughnessFactor"] = mat.values.at("roughnessFactor").Factor();
+
+            // Textures section
+            nlohmann::json textures;
+
+            auto setTextureIfValid = [&](const char* name, const tinygltf::Parameter& param) {
+                if (param.TextureIndex() >= 0)
+                {
+                    int texIndex = param.TextureIndex();
+                    if (texIndex >= 0 && texIndex < model.textures.size())
+                    {
+                        int imageIndex = model.textures[texIndex].source;
+                        if (imageIndex >= 0 && imageIndex < model.images.size())
+                            textures[name] = model.images[imageIndex].uri;
+                    }
+                }
+                };
+
+            if (mat.values.contains("baseColorTexture"))
+                setTextureIfValid("albedo", mat.values.at("baseColorTexture"));
+
+            if (mat.values.contains("metallicRoughnessTexture"))
+                setTextureIfValid("metallicRoughness", mat.values.at("metallicRoughnessTexture"));
+
+            if (mat.additionalValues.contains("normalTexture"))
+                setTextureIfValid("normal", mat.additionalValues.at("normalTexture"));
+
+            if (mat.additionalValues.contains("emissiveTexture"))
+                setTextureIfValid("emissive", mat.additionalValues.at("emissiveTexture"));
+
+            if (mat.additionalValues.contains("occlusionTexture"))
+                setTextureIfValid("occlusion", mat.additionalValues.at("occlusionTexture"));
+
+            if (!textures.empty())
+                materialJson["Textures"] = textures;
+
+            // Write to disk
+            std::string fileName = materialJson["name"].get<std::string>() + ".json";
+            std::string outputPathStr = outputPath + "/" + fileName;
+
+            std::ofstream file(SOURCE_DIR + outputPathStr);
+            if (!file.is_open())
+            {
+                throw std::runtime_error("Failed to write material file: " + outputPathStr);
+                return {};
+            }
+
+            file << materialJson.dump(4);
+            file.close();
+
+            return AssetManager::AddMaterial(outputPathStr);
+        }
+
+
+        bool ProcessModel(const tinygltf::Model& model, std::unordered_map<AssetHandle, AssetHandle>& meshMaterial)
+        {
+            ZoneScoped;
+            GLTFVertexBufferMetaData layout;
+            AssetHandle materialHandle{};
+            AssetHandle meshHandle;
+            std::vector<uint8_t> data;
+
+            std::unordered_map<int, AssetHandle> materialCache;
+
+            for (auto& mesh : model.meshes)
+            {
+                for (auto& primitive : mesh.primitives)
+                {
+                    int materialIndex = primitive.material;
+
+                    if (materialIndex >= 0 && materialIndex < model.materials.size()) 
+                    {
+                        if (materialCache.find(materialIndex) == materialCache.end()) 
+                        {
+                            materialCache[materialIndex] = CreateMaterials(materialIndex, model, model.materials[materialIndex], "Materials/");
+                        }
+                        materialHandle = materialCache[materialIndex];
+                    }
+                    auto it = primitive.attributes.find(std::string(VertexAttributesArray[0])); // POSITION
+                    if (it == primitive.attributes.end()) continue;
+
+                    layout.Count = model.accessors[it->second].count;
+                    layout.Layout = CreateBufferLayout(model, primitive);
+                    FinalizeLayout(layout.Layout);
+                    CreateVertexData(layout, data); // fill the data vector with vertex data
+                    
+					Utils::PrintVertexData(data, layout); // Print vertex data for debugging
+
+                    meshHandle = AssetManager::AddMesh(Utils::ConvertGLTFInfoToVertexInfo(layout), data); // add the mesh to the asset manager   
+
+                    data.clear();
+                    data.shrink_to_fit();
+                    meshMaterial[meshHandle] = materialHandle;
+                }
+            }
+
+            return true;
+        }
+
         std::vector<GLTFVertexBufferMetaData> GetVertexLayout(const tinygltf::Model& model)
         {
+            ZoneScoped;
+
             std::vector<GLTFVertexBufferMetaData> layouts;
             layouts.resize(model.meshes.size());
             int i = 0;
@@ -44,6 +214,8 @@ namespace CHIKU
 
         GLTFVertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive)
         {
+            ZoneScoped;
+
             GLTFVertexBufferLayout layout;
             auto& mask = layout.mask;
 
@@ -117,6 +289,8 @@ namespace CHIKU
 
         void CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer)
         {
+            ZoneScoped;
+
             outBuffer.resize(infoData.Count * infoData.Layout.Stride);
 
             for (int i = 0; i < infoData.Count; ++i)
@@ -134,6 +308,8 @@ namespace CHIKU
 
         const char* ToString(VertexComponentType compType,VertexAttributeType attribType)
         {
+            ZoneScoped;
+
             switch (attribType)
             {
             case VertexAttributeType::SCALAR: return "Scalar";
@@ -157,6 +333,8 @@ namespace CHIKU
 
         void PrintVertexData(const std::vector<uint8_t>& buffer, const GLTFVertexBufferMetaData& infoData)
         {
+            ZoneScoped;
+
             for (int i = 0; i < infoData.Count; ++i)
             {
                 const uint8_t* vertexPtr = buffer.data() + i * infoData.Layout.Stride;
@@ -185,10 +363,12 @@ namespace CHIKU
 
         VertexBufferMetaData ConvertGLTFInfoToVertexInfo(const GLTFVertexBufferMetaData& gltfInfo)
         {
+            ZoneScoped;
+
             VertexBufferMetaData result;
             result.Count = gltfInfo.Count;
             result.Layout.Stride = gltfInfo.Layout.Stride;
-            result.Layout.mask = gltfInfo.Layout.mask;
+            result.Layout.Mask = gltfInfo.Layout.mask;
 
             result.Layout.VertexElements.reserve(gltfInfo.Layout.VertexElements.size());
             for (const auto& attr : gltfInfo.Layout.VertexElements)
@@ -207,27 +387,31 @@ namespace CHIKU
 
         bool IsGLTFFormat(const AssetPath& path)
         {
-            std::string ext = path.extension().string();
+            ZoneScoped;
+
+			auto path_ = std::filesystem::path(path);
+            std::string ext = path_.extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
             return ext == ".gltf" || ext == ".glb";
         }
 
         AssetPath ConvertToGLTF(const AssetPath& modelAsset)
         {
+            ZoneScoped;
             if (Utils::IsGLTFFormat(modelAsset))
             {
                 return modelAsset;
             }
 
-            ZoneScoped;
 
-            std::string stem = modelAsset.stem().string();
+			auto modelpath = std::filesystem::path(modelAsset);
+            std::string stem = modelpath.stem().string();
             AssetPath gltfPath = SOURCE_DIR + "Models/" + (stem + ".gltf");
 
             // Build the command
             std::string command = (SOURCE_DIR + "tools/FBX2glTF.exe")
-                + " --input \"" + SOURCE_DIR + modelAsset.string() + "\""
-                + " --output \"" + gltfPath.string() + "\"";
+                + " --input \"" + SOURCE_DIR + modelAsset + "\""
+                + " --output \"" + gltfPath + "\"";
 
             int result = std::system(command.c_str());
 

@@ -1,35 +1,15 @@
 #include "ModelAsset.h"
-#include "MeshAsset.h"
 #include "AssetManager.h"
 #include "Utils/ModelUtils.h"
 #include "Utils/BufferUtils.h"
+#include "VulkanEngine/GraphicsPipeline.h"
+
+#include <json.hpp>
+#include <fstream>
 #include <iostream>
 
 namespace CHIKU
 {
-    void ModelAsset::CreateMeshes(const tinygltf::Model& model)
-    {
-        std::vector<Utils::GLTFVertexBufferMetaData> info = Utils::GetVertexLayout(model);
-        std::vector<std::vector<uint8_t>> data(info.size());
-
-        int n = info.size();
-        for (int i = 0; i < n; i++)
-        {
-            Utils::CreateVertexData(info[i], data[i]);
-        }
-
-        for (int i = 0; i < n; i++)
-        {
-            AssetManager::AddMesh(Utils::ConvertGLTFInfoToVertexInfo(info[i]), data[i]);
-        }
-    }
-
-    void ModelAsset::CreateMaterials(const tinygltf::Model& model)
-    {
-
-    }
-
-
 	bool ModelAsset::LoadModel(const AssetPath& path)
 	{
         ZoneScoped;
@@ -38,14 +18,39 @@ namespace CHIKU
 		tinygltf::TinyGLTF loader;
 		std::string err, warn;
 		
-		AssetPath newPath = Utils::ConvertToGLTF(SOURCE_DIR + path.string());
+		AssetPath newPath = Utils::ConvertToGLTF(SOURCE_DIR + path);
 
-		bool ok = loader.LoadASCIIFromFile(&model, &err, &warn, newPath.string());
+		bool ok = loader.LoadASCIIFromFile(&model, &err, &warn, newPath);
 		if (!warn.empty()) std::cout << "Warn: " << warn << "\n";
 		if (!err.empty()) std::cerr << "Err: " << err << "\n";
 
-		CreateMeshes(model);
+        std::filesystem::path inputPath = newPath;
+
+		Utils::ProcessModel(model, m_MeshesMaterials);
+
+		for (const auto& [meshHandle, materialHandle] : m_MeshesMaterials)
+		{
+			const auto& meshAsset = std::dynamic_pointer_cast<MeshAsset>(AssetManager::GetAsset(meshHandle));
+
+			m_MeshesMaterialsAssets[meshAsset] = std::dynamic_pointer_cast<MaterialAsset>(AssetManager::GetAsset(materialHandle));
+		}
 
         return ok;
+	}
+
+	void ModelAsset::Draw() const
+	{
+		ZoneScoped;
+		for (const auto& [mesh, material] : m_MeshesMaterialsAssets)
+		{
+			const auto& [pipeline, pipelineLayout] = GraphicsPipeline::GetPipeline(material, mesh);
+
+			material->Bind(pipelineLayout);
+			mesh->Bind();
+
+			vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+			vkCmdDraw(VulkanEngine::GetCommandBuffer(), mesh->GetVertexCount(), 1, 0, 0);
+		}
 	}
 }

@@ -1,7 +1,11 @@
 #pragma once
+
+#include "Utils/Utils.h"
+
 #include "VulkanHeader.h"
 #include <glm/glm.hpp>
 #include <bitset>
+
 
 namespace CHIKU
 {
@@ -50,7 +54,7 @@ namespace CHIKU
     struct VertexBufferLayout
     {
         uint32_t Stride;    
-        std::bitset<ATTR_COUNT> mask;   
+        std::bitset<ATTR_COUNT> Mask;
         std::vector<VertexAttribute> VertexElements;
     };
 
@@ -60,6 +64,24 @@ namespace CHIKU
         VertexBufferLayout Layout;
     };
 
+    inline bool operator==(const VertexAttribute& a, const VertexAttribute& b) {
+        return a.Offset == b.Offset &&
+            a.size == b.size &&
+            a.ComponentType == b.ComponentType &&
+            a.AttributeType == b.AttributeType;
+    }
+
+    inline bool operator==(const VertexBufferLayout& a, const VertexBufferLayout& b) {
+        return a.Stride == b.Stride &&
+            a.Mask == b.Mask &&
+            a.VertexElements == b.VertexElements;
+    }
+
+    inline bool operator==(const VertexBufferMetaData& a, const VertexBufferMetaData& b) {
+        return a.Count == b.Count &&
+            a.Layout == b.Layout;
+    }
+
 	class VertexBuffer
 	{
     public:
@@ -68,14 +90,27 @@ namespace CHIKU
         void CleanUp();
 
         void SetBinding(uint32_t binding) { m_Binding = binding; }
-		void SetMetaData(const VertexBufferMetaData& metaData) { m_MetaData = metaData; }
+		void SetMetaData(const VertexBufferMetaData& metaData) 
+        { 
+            m_MetaData = metaData; 
+
+            PrepareBindingDescription();
+            PrepareAttributeDescriptions();
+        }
 
         inline VkVertexInputBindingDescription GetBindingDescription() { return m_BindingDescription; }
         inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() { return m_AttributeDescription; }
 
+		VkVertexInputBindingDescription GetBindingDescription() const { return m_BindingDescription; }
+        std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() const { return m_AttributeDescription; }
+        inline VkBuffer GetBuffer() const { return m_VertexBuffer; }
+        inline VkDeviceMemory GetBufferMemory() const { return m_VertexBufferMemory; }
+        inline uint64_t GetCount() const { return m_MetaData.Count; }
+		inline VertexBufferMetaData GetMetaData() const { return m_MetaData; }
+
     private:
-        void PrepareBindingDescription(const VertexBufferMetaData& bufferLayout);
-        void PrepareAttributeDescriptions(const VertexBufferMetaData& bufferLayout);
+        void PrepareBindingDescription();
+        void PrepareAttributeDescriptions();
 
     private:
         uint32_t m_Binding = 0;
@@ -85,4 +120,41 @@ namespace CHIKU
         VkVertexInputBindingDescription m_BindingDescription;
         std::vector<VkVertexInputAttributeDescription> m_AttributeDescription;
 	};
+}
+
+namespace std {
+
+    template<>
+    struct hash<CHIKU::VertexAttribute> {
+        size_t operator()(const CHIKU::VertexAttribute& attr) const {
+            size_t seed = 0;
+            CHIKU::Utils::hash_combine(seed, std::hash<uint32_t>()(attr.Offset));
+            CHIKU::Utils::hash_combine(seed, std::hash<uint8_t>()(attr.size));
+            CHIKU::Utils::hash_combine(seed, std::hash<uint8_t>()(static_cast<uint8_t>(attr.ComponentType)));
+            CHIKU::Utils::hash_combine(seed, std::hash<uint8_t>()(static_cast<uint8_t>(attr.AttributeType)));
+            return seed;
+        }
+    };
+
+    template<>
+    struct hash<CHIKU::VertexBufferLayout> {
+        size_t operator()(const CHIKU::VertexBufferLayout& layout) const {
+            size_t seed = 0;
+            CHIKU::Utils::hash_combine(seed, std::hash<uint32_t>()(layout.Stride));
+            CHIKU::Utils::hash_combine(seed, std::hash<std::bitset<CHIKU::ATTR_COUNT>>()(layout.Mask));
+            for (const auto& attr : layout.VertexElements)
+                CHIKU::Utils::hash_combine(seed, std::hash<CHIKU::VertexAttribute>()(attr));
+            return seed;
+        }
+    };
+
+    template<>
+    struct hash<CHIKU::VertexBufferMetaData> {
+        size_t operator()(const CHIKU::VertexBufferMetaData& meta) const {
+            size_t seed = 0;
+            CHIKU::Utils::hash_combine(seed, std::hash<uint64_t>()(meta.Count));
+            CHIKU::Utils::hash_combine(seed, std::hash<CHIKU::VertexBufferLayout>()(meta.Layout));
+            return seed;
+        }
+    };
 }

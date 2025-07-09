@@ -2,6 +2,8 @@
 #include "Asset.h"
 #include "VulkanEngine/Buffer/VertexBuffer.h"
 #include "VulkanEngine/Buffer/IndexBuffer.h"
+#include "MeshAsset.h"
+#include "MaterialAsset.h"
 #include <tinygltf/tiny_gltf.h>
 #include <unordered_map>
 
@@ -19,14 +21,13 @@ namespace CHIKU
 			LoadModel(path);
 		}
 
-		void CreateMeshes(const tinygltf::Model& model);
-		void CreateMaterials(const tinygltf::Model& model);
-
 		bool LoadModel(const AssetPath& path);
+		void Draw() const;
 
 	private:
-
 		//The meshes inside the model and the materils for each mesh
 		std::unordered_map<AssetHandle, AssetHandle> m_MeshesMaterials;
+
+		std::unordered_map<std::shared_ptr<MeshAsset>, std::shared_ptr<MaterialAsset>> m_MeshesMaterialsAssets;
 	};
 }

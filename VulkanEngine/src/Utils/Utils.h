@@ -18,5 +18,10 @@ namespace CHIKU
 			std::uniform_int_distribution<uint64_t> dist;
 			return dist(m_Range);
 		}
+
+		// hash_combine helper
+		inline void hash_combine(std::size_t& seed, std::size_t value) {
+			seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		}
 	}
 }

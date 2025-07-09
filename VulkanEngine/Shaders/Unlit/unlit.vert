@@ -9,10 +9,9 @@ layout(set = 0,binding = 0) uniform UniformBufferObject {
     mat4 u_Proj;
 } ubo;
 
-layout (set = 1,binding = 0) uniform Color {
+layout (set = 0,binding = 1) uniform Color {
    vec3 inColor;
 } cor;
-
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inTexCoord;

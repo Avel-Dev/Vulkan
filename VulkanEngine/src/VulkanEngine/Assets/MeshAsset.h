@@ -22,6 +22,11 @@ namespace CHIKU
 			Asset::CleanUp();
 		}
 		
+		uint32_t GetVertexCount() const { return m_VertexBuffer.GetCount(); }
+
+		VertexBuffer GetVertexBuffer() const { return m_VertexBuffer; }
+		void Bind() const { m_VertexBuffer.Bind(); };
+
 	private:
 		VertexBuffer m_VertexBuffer;
 	};

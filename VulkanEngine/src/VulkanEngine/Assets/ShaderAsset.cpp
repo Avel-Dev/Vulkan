@@ -1,4 +1,6 @@
 #include "ShaderAsset.h"
+#include "VulkanEngine/Buffer/UniformBuffer.h"
+#include "Utils/ShaderUtils.h"
 #include <unordered_map>
 #include <fstream>
 #include <json.hpp>
@@ -8,10 +10,15 @@ namespace CHIKU
 {
     void ShaderAsset::CreateShader(const std::vector<AssetPath>& shaderCodes)
     {
-        for (auto& code : shaderCodes)
+        ZoneScoped;
+
+		m_ShaderCodes = shaderCodes;
+        for (auto& code : m_ShaderCodes)
         {
             CreateShaderProgram(code);
         }
+
+        CreateUniformBufferDescription(m_ShaderSPIRVs);
     }
 
     ShaderAsset::~ShaderAsset()
@@ -19,6 +26,12 @@ namespace CHIKU
         ZoneScoped;
         Asset::~Asset();
         CleanUp();
+    }
+
+    void ShaderAsset::CreateUniformBufferDescription(const std::vector<AssetPath>& shaderCodes)
+    {
+        ZoneScoped;
+		Utils::ProcessSPIRV(shaderCodes,m_UniformBufferDescription,m_InputAttributes);
     }
 
     std::vector<char> ShaderAsset::ReadFile(const std::string& filePath) const
@@ -42,12 +55,14 @@ namespace CHIKU
         return buffer;
     }
 
-    void ShaderAsset::GetShaderNameAndStage(const AssetPath& path, ShaderHandle& shaderName, ShaderStages& shaderStage) const
+    void ShaderAsset::GetShaderNameAndStage(const AssetPath& path, ReadableHandle& shaderName, ShaderStages& shaderStage) const
     {
+        ZoneScoped;
+
         shaderName = "Unknown";
         std::string shaderType = "Unknown";
 
-        std::fstream file(SOURCE_DIR + path.string(), std::ios::in | std::ios::out);
+        std::fstream file(SOURCE_DIR + path, std::ios::in | std::ios::out);
         std::string line;
         while (std::getline(file, line))
         {
@@ -63,12 +78,12 @@ namespace CHIKU
             }
         }
 
-        if (shaderType == SHADER_STAGE_VERTEX)              shaderStage = ShaderStages::Vertex;
-        else if (shaderType == SHADER_STAGE_TESSELATION)    shaderStage = ShaderStages::Tessellation;
-        else if (shaderType == SHADER_STAGE_GEOMETRY)       shaderStage = ShaderStages::Geometry;
-        else if (shaderType == SHADER_STAGE_FRAGMENT)       shaderStage = ShaderStages::Fragment;
-        else if (shaderType == SHADER_STAGE_COMPUTE)        shaderStage = ShaderStages::Compute;
-        else shaderStage = ShaderStages::Unknown;
+        if (shaderType == SHADER_STAGE_VERTEX)              shaderStage = ShaderStages::Stage_Vertex;
+        else if (shaderType == SHADER_STAGE_TESSELATION)    shaderStage = ShaderStages::Stage_Tessellation;
+        else if (shaderType == SHADER_STAGE_GEOMETRY)       shaderStage = ShaderStages::Stage_Geometry;
+        else if (shaderType == SHADER_STAGE_FRAGMENT)       shaderStage = ShaderStages::Stage_Fragment;
+        else if (shaderType == SHADER_STAGE_COMPUTE)        shaderStage = ShaderStages::Stage_Compute;
+        else shaderStage = ShaderStages::Stage_None;
     }
 
     VkShaderModule ShaderAsset::CreateShaderModule(const std::vector<char>& code) const
@@ -93,14 +108,16 @@ namespace CHIKU
     {
         ZoneScoped;
 
-        std::string path = shaderPath.string();
+        std::string path = shaderPath;
 
         auto index = path.find_last_of(".");
-        CreateSPIRV(path, path + ".spv");
-        auto code = ReadFile(path + ".spv");
+        m_ShaderSPIRVs.push_back(path + ".spv");
+		auto& spvPath = m_ShaderSPIRVs.back();
+        CreateSPIRV(path,spvPath);
+        auto code = ReadFile(spvPath);
 
-        ShaderStages stage = ShaderStages::Unknown;
-        ShaderHandle handle = "";
+        ShaderStages stage = ShaderStages::Stage_None;
+        ReadableHandle handle = "";
         GetShaderNameAndStage(path, handle, stage);
         if (m_ShaderHandle != "" && m_ShaderHandle != handle)
         {
@@ -108,7 +125,7 @@ namespace CHIKU
         }
         m_ShaderHandle = handle;
 
-        if (stage != ShaderStages::Unknown)
+        if (stage != ShaderStages::Stage_None)
         {
             if (m_ShaderStage.find(stage) != m_ShaderStage.end())
             {

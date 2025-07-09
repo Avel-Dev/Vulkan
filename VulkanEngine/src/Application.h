@@ -1,13 +1,14 @@
 #pragma once
 #include "VulkanEngine/VulkanEngine.h"
 #include "VulkanEngine/Window.h"
+#include "VulkanEngine/Assets/ModelAsset.h"
 
 namespace CHIKU
 {
 	class Application
 	{
 	public:
-		Application();
+		Application() = default;
 		void Init();
 		void Run();
 		void Render();
@@ -16,5 +17,6 @@ namespace CHIKU
 	private:
 		Window m_Window;
 		VulkanEngine m_Engine;
+		std::shared_ptr<ModelAsset> m_Model;
 	};
 }

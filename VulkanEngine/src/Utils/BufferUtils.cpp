@@ -91,6 +91,8 @@ namespace CHIKU
 
         VkFormat GetVkFormat(const VertexComponentType& component, const VertexAttributeType& attribute)
         {
+            ZoneScoped;
+
             using VCT = VertexComponentType;
             using VAT = VertexAttributeType;
 

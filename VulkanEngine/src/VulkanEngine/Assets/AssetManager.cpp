@@ -5,6 +5,7 @@
 #include "MaterialAsset.h"
 #include "Utils/Utils.h"
 
+#include <stdexcept>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -12,7 +13,7 @@
 namespace CHIKU
 {
 	std::unordered_map<AssetHandle, std::shared_ptr<Asset>> AssetManager::m_Assets;
-	std::vector<std::pair<AssetHandle, ShaderHandle>> AssetManager::m_Shader;
+	std::unordered_map<ReadableHandle,AssetHandle> AssetManager::m_Shaders;
 
 	void AssetManager::Init()
 	{
@@ -73,7 +74,14 @@ namespace CHIKU
 		std::shared_ptr<ShaderAsset> shaderAsset = std::make_shared<ShaderAsset>(newHandle);
 		shaderAsset->CreateShader(path);
 		m_Assets[newHandle] = shaderAsset;
-		m_Shader.emplace_back(newHandle, shaderAsset->GetShaderHandle());
+
+		if (m_Shaders.find(shaderAsset->GetShaderHandle()) != m_Shaders.end()) 
+		{
+			throw std::runtime_error("Shader already exists; new shader being created with a existing shader handle");
+		}
+
+		m_Shaders[shaderAsset->GetShaderHandle()] = newHandle;
+
 		return newHandle;
 	}
 
@@ -85,5 +93,29 @@ namespace CHIKU
 			asset.second->CleanUp();
 		}
 		m_Assets.clear();
+	}
+
+	AssetHandle AssetManager::GetShaderAssetHandle(const ReadableHandle& shaderHandle) 
+	{
+		ZoneScoped;
+
+		if (m_Shaders.find(shaderHandle) != m_Shaders.end())
+		{
+			return m_Shaders[shaderHandle];
+		}
+		
+		return Asset::InvalidHandle;
+	}
+
+	std::shared_ptr<Asset> AssetManager::GetAsset(const AssetHandle& assetHandle)
+	{
+		ZoneScoped;
+
+		auto it = m_Assets.find(assetHandle);
+		if (assetHandle == Asset::InvalidHandle || it == m_Assets.end())
+		{
+			return nullptr;
+		}
+		return it->second;
 	}
 }

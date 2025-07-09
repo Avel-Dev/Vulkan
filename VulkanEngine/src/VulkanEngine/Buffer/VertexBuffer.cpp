@@ -30,9 +30,6 @@ namespace CHIKU
 
         vkDestroyBuffer(VulkanEngine::GetDevice(), stagingBuffer, nullptr);
         vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
-
-        PrepareBindingDescription(m_MetaData);
-		PrepareAttributeDescriptions(m_MetaData);
     }
 
     void VertexBuffer::Bind() const
@@ -52,21 +49,23 @@ namespace CHIKU
         vkFreeMemory(VulkanEngine::GetDevice(), m_VertexBufferMemory, nullptr);
     }
 
-    void VertexBuffer::PrepareBindingDescription(const VertexBufferMetaData& bufferLayout)
+    void VertexBuffer::PrepareBindingDescription()
     {
         ZoneScoped;
 
+		m_BindingDescription = {};
         m_BindingDescription.binding = m_Binding;
-        m_BindingDescription.stride = bufferLayout.Layout.Stride;
+        m_BindingDescription.stride = m_MetaData.Layout.Stride;
         m_BindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     }
 
-    void VertexBuffer::PrepareAttributeDescriptions(const VertexBufferMetaData& metaData)
+    void VertexBuffer::PrepareAttributeDescriptions()
     {
         ZoneScoped;
 
-		const auto& layout = metaData.Layout;
+		const auto& layout = m_MetaData.Layout;
 
+		m_AttributeDescription.clear();
         m_AttributeDescription.resize(layout.VertexElements.size());
 
         for (int i = 0; i < m_AttributeDescription.size(); i++)
@@ -75,7 +74,8 @@ namespace CHIKU
             const auto& attributeType = layout.VertexElements[i].AttributeType;
             const auto& offset = layout.VertexElements[i].Offset;
 
-            m_AttributeDescription[i].binding = 0;
+			m_AttributeDescription[i].binding = 0; //Because we have interleaved vertex data, we use binding 0
+			//Binding 0 is used when we use one vertex buffer with interleaved data
             m_AttributeDescription[i].location = i;
             m_AttributeDescription[i].format = Utils::GetVkFormat(componentType, attributeType);
             m_AttributeDescription[i].offset = offset;
