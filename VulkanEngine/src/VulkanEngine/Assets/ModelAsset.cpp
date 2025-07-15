@@ -43,10 +43,8 @@ namespace CHIKU
 		ZoneScoped;
 		for (const auto& [mesh, material] : m_MeshesMaterialsAssets)
 		{
-			const auto& [pipeline, pipelineLayout] = GraphicsPipeline::GetPipeline(material, mesh);
+			GraphicsPipeline::BindPipeline(material, mesh);
 
-			material->Bind(pipelineLayout);
-			vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 			mesh->Bind();
 			mesh->Draw();
 		}

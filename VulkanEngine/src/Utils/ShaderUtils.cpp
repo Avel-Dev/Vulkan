@@ -207,6 +207,11 @@ namespace CHIKU
                     const SpvReflectDescriptorBinding* binding = set->bindings[i];
                     uint32_t bindingIndex = binding->binding;
 
+                    if (set->set == 0 && binding->binding == 0)
+                    {
+						continue; // skip the reserved binding 0 in set 0
+                    }
+
                     if(uniformBufferSet[set->set].find(bindingIndex) != uniformBufferSet[set->set].end())
                     {
                         uniformBufferSet[set->set][bindingIndex].Stages.set(MapReflectStage(spirv.shader_stage));

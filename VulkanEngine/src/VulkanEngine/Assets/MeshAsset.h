@@ -21,10 +21,11 @@ namespace CHIKU
 		virtual void CleanUp() override
 		{
 			m_VertexBuffer.CleanUp();
+			m_IndexBuffer.CleanUp();
 			Asset::CleanUp();
 		}
 		
-		inline uint32_t GetVertexCount() const { return m_VertexBuffer.GetCount(); }
+		inline uint64_t GetVertexCount() const { return m_VertexBuffer.GetCount(); }
 
 		inline VertexBuffer GetVertexBuffer() const { return m_VertexBuffer; }
 		inline void Bind() const { m_VertexBuffer.Bind(); };

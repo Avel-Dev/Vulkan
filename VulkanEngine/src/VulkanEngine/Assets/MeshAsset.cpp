@@ -9,11 +9,11 @@ namespace CHIKU
 		if (m_IndexBuffer.GetCount() > 0)
 		{
 			m_IndexBuffer.Bind();
-			vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),36,1,0,0,0);
+			vkCmdDrawIndexed(VulkanEngine::GetCommandBuffer(),m_IndexBuffer.GetCount(), 1, 0, 0, 0);
 		}
 		else
 		{
-			//vkCmdDraw(VulkanEngine::GetCommandBuffer(), m_VertexBuffer.GetCount(), 1, 0, 0);
+			vkCmdDraw(VulkanEngine::GetCommandBuffer(), (uint32_t)m_VertexBuffer.GetCount(), 1, 0, 0);
 		}
 	}
 }

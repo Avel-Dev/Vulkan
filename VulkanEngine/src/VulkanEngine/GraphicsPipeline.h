@@ -40,12 +40,18 @@ namespace CHIKU
 	public:
 		GraphicsPipeline() = default;
 		
+		static void Init();
 		static void CleanUp();
 
 		static std::pair<VkPipeline, VkPipelineLayout> CreatePipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const VkVertexInputBindingDescription& bindingDescription,const std::vector<VkVertexInputAttributeDescription>& attributeDescription);
 		static std::pair<VkPipeline, VkPipelineLayout> GetPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset);
 
+		static void BindPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset);
+
 	private:
 		static std::unordered_map<PipelineKey, std::pair<VkPipeline,VkPipelineLayout>> m_Pipelines;
+		static std::array<UniformSetStorage, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> m_GlobalUniformSetStorage; //Key is the set Index>
+		static std::array<VkDescriptorSetLayout, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> m_GlobalDescriptorSetLayouts; //Key is the set Index>
+		static std::array<std::array<VkDescriptorSet, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT>,MAX_FRAMES_IN_FLIGHT> m_GlobalDescriptorSetsChache;
 	};
 }

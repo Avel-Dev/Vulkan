@@ -54,7 +54,7 @@ namespace CHIKU
                     break;
                 }
 
-                std::cout << "Index[" << i << "] = " << index << std::endl;
+                //std::cout << "Index[" << i << "] = " << index << std::endl;
 
 				indices.push_back(index);
             }
@@ -191,17 +191,17 @@ namespace CHIKU
 
             std::unordered_map<int, AssetHandle> materialCache;
 
-            for (auto& mesh : model.meshes)
+            bool success = true;
+
+            for (const auto& node : model.meshes)
             {
-                for (auto& primitive : mesh.primitives)
+                //if (node.mesh < 0)
+                //{
+                //    continue;
+                //}
+
+                for (const auto& primitive : node.primitives)
                 {
-
-					std::vector<uint32_t> indices;
-                    if (primitive.indices >= 0)
-                    {
-						indices = CreateIndices(model, primitive);
-                    }
-
                     int materialIndex = primitive.material;
 
                     if (materialIndex >= 0 && materialIndex < model.materials.size()) 
@@ -215,12 +215,21 @@ namespace CHIKU
                     auto it = primitive.attributes.find(std::string(VertexAttributesArray[0])); // POSITION
                     if (it == primitive.attributes.end()) continue;
 
-					layout.Count = model.accessors[it->second].count;
+                    std::vector<uint32_t> indices;
+                    if (primitive.indices >= 0)
+                    {
+                        indices = CreateIndices(model, primitive);
+                    }
+
+                    layout.Count = model.accessors[it->second].count;
                     layout.Layout = CreateBufferLayout(model, primitive);
                     FinalizeLayout(layout.Layout);
-                    CreateVertexData(layout, data); // fill the data vector with vertex data
-
-					Utils::PrintVertexData(data, layout); // Print vertex data for debugging
+                    
+                    if (!CreateVertexData(layout, data)) // fill the data vector with vertex data
+                    {
+                        success = false;
+                    }
+					//Utils::PrintVertexData(data, layout); // Print vertex data for debugging
 
                     meshHandle = AssetManager::AddMesh(Utils::ConvertGLTFInfoToVertexInfo(layout), data, indices); // add the mesh to the asset manager   
 
@@ -228,34 +237,14 @@ namespace CHIKU
                     data.shrink_to_fit();
                     meshMaterial[meshHandle] = materialHandle;
                 }
+
+                if (!success)
+                    break;
             }
 
-            return true;
+            return success;
         }
 
-        std::vector<GLTFVertexBufferMetaData> GetVertexLayout(const tinygltf::Model& model)
-        {
-            ZoneScoped;
-
-            std::vector<GLTFVertexBufferMetaData> layouts;
-            layouts.resize(model.meshes.size());
-            int i = 0;
-
-            for (auto& mesh : model.meshes)
-            {
-                for (auto& primitive : mesh.primitives)
-                {
-                    auto it = primitive.attributes.find(std::string(VertexAttributesArray[0]));
-                    layouts[i].Count = model.accessors[it->second].count;
-                    layouts[i].Layout = CreateBufferLayout(model, primitive);
-                    FinalizeLayout(layouts[i].Layout);
-                }
-
-                i++;
-            }
-
-            return layouts;
-        }
 
         GLTFVertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive)
         {
@@ -332,7 +321,7 @@ namespace CHIKU
             return layout;
         }
 
-        void CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer)
+        bool CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer)
         {
             ZoneScoped;
 
@@ -349,6 +338,8 @@ namespace CHIKU
                     std::memcpy(dst, src, attrib.size);
                 }
             }
+
+            return true;
         }
 
         const char* ToString(VertexComponentType compType,VertexAttributeType attribType)

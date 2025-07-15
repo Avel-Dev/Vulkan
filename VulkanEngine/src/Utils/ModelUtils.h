@@ -40,10 +40,9 @@ namespace CHIKU
         AssetHandle CreateMaterials(int index, const tinygltf::Model& model, const tinygltf::Material& mat, const AssetPath& outputPath);
         bool ProcessModel(const tinygltf::Model& model, std::unordered_map<AssetHandle, AssetHandle>& meshMaterial);
         
-        std::vector<GLTFVertexBufferMetaData> GetVertexLayout(const tinygltf::Model& model);
 		GLTFVertexBufferLayout CreateBufferLayout(const tinygltf::Model& model, const tinygltf::Primitive& primitive);
 		
-        void CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer);
+        bool CreateVertexData(const GLTFVertexBufferMetaData& infoData, std::vector<uint8_t>& outBuffer);
 		void PrintVertexData(const std::vector<uint8_t>& buffer, const GLTFVertexBufferMetaData& infoData);
 
         VertexBufferMetaData ConvertGLTFInfoToVertexInfo(const GLTFVertexBufferMetaData& gltfInfo);

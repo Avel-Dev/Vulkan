@@ -2,6 +2,7 @@
 #include "AssetManager.h"
 #include "Utils/ShaderUtils.h"
 #include "Utils/BufferUtils.h"
+#include "VulkanEngine/DescriptorPool.h"    
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -42,6 +43,13 @@ namespace CHIKU
         mat.config.polygonMode = cfg["polygonMode"];
         mat.config.topology = cfg["topology"];
 
+        float r = j["baseColorFactor"][0];
+        float g = j["baseColorFactor"][1];
+        float b = j["baseColorFactor"][2];
+        float w = j["baseColorFactor"][3];
+
+		mat.config.baseColor = glm::vec4(r,g,b,w);
+
         return mat;
     }
 
@@ -72,58 +80,50 @@ namespace CHIKU
         ZoneScoped;
 
         const auto& bufferDescription = m_Shader->GetBufferDescription();
+        m_UniformSetStorage = CreateDescriptorSetLayout(bufferDescription);
+        CreateDescriptorSets( bufferDescription, m_UniformSetStorage);
+
+        if(m_UniformSetStorage.empty())
+            return;
+
+        for (int frameNumber = 0; frameNumber < MAX_FRAMES_IN_FLIGHT; frameNumber++)
+        {
+            m_DescriptorSetsChache[frameNumber].resize(m_UniformSetStorage.size());
+
+            int i = 0;
+            for (const auto& [setIndex, storage] : m_UniformSetStorage)
+            {
+                m_DescriptorSetsChache[frameNumber][i] = storage.DescriptorSets[frameNumber];
+                i++;
+            }
+        }
+
+    }
+
+    std::map<uint32_t, UniformSetStorage>  MaterialAsset::CreateDescriptorSetLayout(const UniformBufferDescription& bufferDescription)
+    {
+        ZoneScoped;
+        std::map<uint32_t, UniformSetStorage> setStorage;
 
         for (const auto& [setIndex, set] : bufferDescription)
         {
-            for (const auto& [bindingIndex, uniformBuffer] : set) 
+            for (const auto& [bindingIndex, uniformBuffer] : set)
             {
                 if (!uniformBuffer.isUBO())
                     continue;
 
                 UniformBufferStorage storage;
-                storage.DataBuffer.resize(uniformBuffer.Size);
 
-                for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+                for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
                 {
-                     Utils::CreateBuffer(uniformBuffer.Size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, storage.UniformBuffers[i], storage.UniformBuffersMemory[i]);
+                    Utils::CreateBuffer(uniformBuffer.Size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, storage.UniformBuffers[i], storage.UniformBuffersMemory[i]);
 
                     vkMapMemory(VulkanEngine::GetDevice(), storage.UniformBuffersMemory[i], 0, uniformBuffer.Size, 0, &storage.UniformBuffersMapped[i]);
                 }
 
-                m_UniformSetStorage[setIndex].BindingStorage[bindingIndex] = storage;
+                setStorage[setIndex].BindingStorage[bindingIndex] = storage;
             }
         }
-
-        CreateDescriptorPool();
-        CreateDescriptorSetLayout(bufferDescription);
-        CreateDescriptorSets();
-    }
-
-    void MaterialAsset::CreateDescriptorPool()
-    {
-        ZoneScoped;
-
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-        if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
-    }
-
-    void MaterialAsset::CreateDescriptorSetLayout(const UniformBufferDescription& bufferDescription)
-    {
-        ZoneScoped;
 
         for(const auto& [setIndex,set] : bufferDescription)
         {
@@ -162,21 +162,23 @@ namespace CHIKU
                 throw std::runtime_error("failed to create descriptor set layout!");
             }
 
-            m_UniformSetStorage[setIndex].DescriptorSetLayout = layout;
+            setStorage[setIndex].DescriptorSetLayout = layout;
 		}
+
+		return setStorage;
     }
 
-    void MaterialAsset::CreateDescriptorSets()
+    void MaterialAsset::CreateDescriptorSets(const UniformBufferDescription& bufferDescription, std::map<uint32_t, UniformSetStorage>& setStorage)
     {
         ZoneScoped;
 
-        for (auto& [setIndex, layout] : m_UniformSetStorage)
+        for (auto& [setIndex, layout] : setStorage)
         {
             std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout.DescriptorSetLayout);
 
             VkDescriptorSetAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = m_DescriptorPool;
+            allocInfo.descriptorPool = DescriptorPool::GetDescriptorPool();
             allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
             allocInfo.pSetLayouts = layouts.data();
 
@@ -184,8 +186,6 @@ namespace CHIKU
             {
                 throw std::runtime_error("failed to allocate descriptor sets!");
             }
-
-            const auto& bufferDescription = m_Shader->GetBufferDescription();
 
             for (const auto& [bindingIndex, uniformBuffer] : bufferDescription.at(setIndex))
             {
@@ -244,40 +244,13 @@ namespace CHIKU
     {
         ZoneScoped;
 
-		const auto& bufferDescription = m_Shader->GetBufferDescription();
-
-        for (auto& [setIndex, set] : m_UniformSetStorage)
+        if (m_UniformSetStorage.find(1) == m_UniformSetStorage.end())
         {
-            for (auto& [bindingIndex, storage] : set.BindingStorage)
-            {
-		//		//const auto& uniformBuffer = bufferDescription.find(setIndex)->second.find(bindingIndex)->second;
-  //  //            if (!uniformBuffer.isValid() || uniformBuffer.isSampler())
-  //  //            {
-  //  //                throw std::runtime_error("It is not a valid uniform buffer");
-  //  //            }
-
-  //  //            // Replace this with actual material data
-  //  //            memcpy(storage.UniformBuffersMapped[currentFrame],&currentFrame, uniformBuffer.Size);
-            }
+			throw std::runtime_error("Uniform Set 1 not found, it should contain base color");
         }
 
-        auto& let = m_UniformSetStorage[0].BindingStorage[0].UniformBuffersMapped[currentFrame];
-
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		//glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)Window::WIDTH / (float)Window::HEIGHT, 0.1f, 10.0f);
-
-        proj[1][1] *= -1;
-
-        glm::mat4 data[3] = { model,view,proj };
-
-        memcpy(let, data, sizeof(glm::mat4) * 3);
+        auto& color = m_UniformSetStorage[1].BindingStorage[0].UniformBuffersMapped[currentFrame];
+        memcpy(color, &m_Material.config.baseColor, sizeof(glm::vec4));
     }
 
     void MaterialAsset::CleanUp()
@@ -306,12 +279,6 @@ namespace CHIKU
             }
         }
 
-        if (m_DescriptorPool)
-        {
-            vkDestroyDescriptorPool(VulkanEngine::GetDevice(), m_DescriptorPool, nullptr);
-			m_DescriptorPool = VK_NULL_HANDLE;
-        }
-
         m_UniformSetStorage.clear();
     }
 
@@ -334,16 +301,5 @@ namespace CHIKU
 		}
 
         return layouts;
-    }
-
-    void MaterialAsset::Bind(VkPipelineLayout pipelineLayout)
-    {
-        ZoneScoped;
-        UpdateUniformBuffer(VulkanEngine::GetCurrentFrame());
-        
-        for (const auto& [setIndex, uniformStorage] : m_UniformSetStorage)
-        {
-            vkCmdBindDescriptorSets(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &uniformStorage.DescriptorSets[VulkanEngine::GetCurrentFrame()], 0, nullptr);
-        }
     }
 }

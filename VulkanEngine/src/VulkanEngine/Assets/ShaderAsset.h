@@ -28,7 +28,10 @@ namespace CHIKU
         void CreateShader(const std::vector<AssetPath>& shaderCodes);
         bool CreateShaderProgram(const AssetPath& ID);
 
-        const UniformBufferDescription& GetBufferDescription() const { return m_UniformBufferDescription; }
+        const UniformBufferDescription& GetBufferDescription() const 
+        { 
+            return m_UniformBufferDescription; 
+        }
         void CleanUp();
         virtual ~ShaderAsset();
 

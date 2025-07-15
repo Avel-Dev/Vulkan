@@ -1,21 +1,64 @@
 #include "GraphicsPipeline.h"
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
+
 namespace CHIKU
 {
     std::unordered_map<PipelineKey, std::pair<VkPipeline, VkPipelineLayout>> GraphicsPipeline::m_Pipelines;
+
+    std::array<UniformSetStorage, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> GraphicsPipeline::m_GlobalUniformSetStorage; //Key is the set Index>
+    std::array<VkDescriptorSetLayout, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> GraphicsPipeline::m_GlobalDescriptorSetLayouts; //Key is the set Index>
+    std::array<std::array<VkDescriptorSet, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT>, MAX_FRAMES_IN_FLIGHT> GraphicsPipeline::m_GlobalDescriptorSetsChache;
+
+    void GraphicsPipeline::Init()
+    {
+        ZoneScoped;
+        UniformBufferDescription bufferDescription;
+        bufferDescription[0][0] =
+        {
+            {0,UniformOpaqueDataType::none},
+            {
+                {UniformPlainDataType::Mat4, 0, sizeof(glm::mat4)},
+                {UniformPlainDataType::Mat4, sizeof(glm::mat4), sizeof(glm::mat4)},
+                {UniformPlainDataType::Mat4, sizeof(glm::mat4) * 2, sizeof(glm::mat4)}
+            },
+            0,
+			sizeof(glm::mat4) * 3,
+        };
+
+        bufferDescription[0][0].Stages.set(ShaderStages::Stage_Vertex);
+
+        auto setStorage = MaterialAsset::CreateDescriptorSetLayout(bufferDescription);
+        MaterialAsset::CreateDescriptorSets(bufferDescription, setStorage);
+
+        for(const auto& [setIndex,UniformStorage] : setStorage)
+        {
+            m_GlobalUniformSetStorage[setIndex] = UniformStorage;
+            m_GlobalDescriptorSetLayouts[setIndex] = UniformStorage.DescriptorSetLayout;
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+            {
+                m_GlobalDescriptorSetsChache[i][setIndex] = UniformStorage.DescriptorSets[i];
+            }
+		}
+	}
 
     std::pair<VkPipeline, VkPipelineLayout> GraphicsPipeline::CreatePipeline(const std::shared_ptr < MaterialAsset>& materialAsset, const VkVertexInputBindingDescription& bindingDescription, const std::vector<VkVertexInputAttributeDescription>& attributeDescription)
 	{
         ZoneScoped;
 
-		std::shared_ptr<ShaderAsset> shaderAsset = materialAsset->GetShader();
+		const auto& config = materialAsset->GetMaterial().config;
+		const auto& shaderAsset = materialAsset->GetShader();
+        const auto& shaderStages = shaderAsset->GetShaderStage();
         
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStageInfos;
-        const auto& shaderStages = shaderAsset->GetShaderStage();
 
         for (const auto& [stage, shaderModule] : shaderStages)
         {
-			VkShaderStageFlagBits flags; // Set flags if needed
+			VkShaderStageFlagBits flags = VK_SHADER_STAGE_ALL; // Set flags if needed
 
             if(stage == ShaderStages::Stage_Vertex)
             {
@@ -96,12 +139,17 @@ namespace CHIKU
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
-		const auto& descriptorSetLayout = materialAsset->GetDescriptorSetLayouts();
+		const auto& materialDescriptorSetLayouts = materialAsset->GetDescriptorSetLayouts();
         
+		std::vector<VkDescriptorSetLayout> finalDescriptorSetLayouts;
+
+        finalDescriptorSetLayouts.insert(finalDescriptorSetLayouts.end(), m_GlobalDescriptorSetLayouts.begin(), m_GlobalDescriptorSetLayouts.end());
+        finalDescriptorSetLayouts.insert(finalDescriptorSetLayouts.end(), materialDescriptorSetLayouts.begin(), materialDescriptorSetLayouts.end());
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayout.size());
-        pipelineLayoutInfo.pSetLayouts = descriptorSetLayout.data();
+        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(finalDescriptorSetLayouts.size());
+        pipelineLayoutInfo.pSetLayouts = finalDescriptorSetLayouts.data();
 
         VkPipelineLayout pipelineLayout;
 
@@ -112,8 +160,8 @@ namespace CHIKU
 
         VkPipelineDepthStencilStateCreateInfo depthStencil{};
         depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencil.depthTestEnable = VK_TRUE;
-        depthStencil.depthWriteEnable = VK_TRUE;
+        depthStencil.depthTestEnable = config.depthTest;
+        depthStencil.depthWriteEnable = config.depthWrite;
         depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.minDepthBounds = 0.0f; // Optional
@@ -163,6 +211,53 @@ namespace CHIKU
         return m_Pipelines[key];
     }
 
+    void GraphicsPipeline::BindPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset)
+    {
+        auto& let = m_GlobalUniformSetStorage[0].BindingStorage[0].UniformBuffersMapped[VulkanEngine::GetCurrentFrame()];
+
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)Window::WIDTH / (float)Window::HEIGHT, 0.1f, 10.0f);
+
+        proj[1][1] *= -1;
+
+        //model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+
+        auto size = sizeof(glm::mat4);
+
+        glm::mat4 data[3] = { model,view,proj };
+        memcpy(let, data, size);
+        memcpy((uint8_t*)let + size, (uint8_t*)data + size, size * 2);
+
+		materialAsset->UpdateUniformBuffer(VulkanEngine::GetCurrentFrame());
+
+        const auto& [pipeline, pipelineLayout] = GraphicsPipeline::GetPipeline(materialAsset, meshAsset);
+		const auto& sets = materialAsset->GetDescriptorSets(VulkanEngine::GetCurrentFrame());
+
+		std::vector<VkDescriptorSet> descriptorSets;
+
+        descriptorSets.insert(descriptorSets.end(), m_GlobalDescriptorSetsChache[VulkanEngine::GetCurrentFrame()].begin(), m_GlobalDescriptorSetsChache[VulkanEngine::GetCurrentFrame()].end());
+        descriptorSets.insert(descriptorSets.end(), sets.begin(), sets.end());
+
+        vkCmdBindDescriptorSets(
+            VulkanEngine::GetCommandBuffer(),
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipelineLayout,
+            0,
+            descriptorSets.size(),
+            descriptorSets.data(),
+            0, 
+            nullptr);
+
+        vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    }   
+
     void GraphicsPipeline::CleanUp()
     {
         ZoneScoped;
@@ -172,5 +267,24 @@ namespace CHIKU
             vkDestroyPipelineLayout(VulkanEngine::GetDevice(), pipeline.second, nullptr);
         }
         m_Pipelines.clear();
+
+        for (auto& layout : m_GlobalDescriptorSetLayouts)
+        {
+            vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), layout, nullptr);
+		}
+
+        for(auto& setStorage : m_GlobalUniformSetStorage)
+        {
+            for (auto& [bindingIndex, storage] : setStorage.BindingStorage)
+            {
+                for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+                {
+                    vkDestroyBuffer(VulkanEngine::GetDevice(), storage.UniformBuffers[i], nullptr);
+                    vkFreeMemory(VulkanEngine::GetDevice(), storage.UniformBuffersMemory[i], nullptr);
+                }
+            }
+            vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), setStorage.DescriptorSetLayout, nullptr);
+		}
+
 	}
 }
