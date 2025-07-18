@@ -61,7 +61,7 @@ namespace CHIKU
         CreateFrameBuffers();
     }
 
-    VkFormat Swapchain::FindDepthFormat(const VkPhysicalDevice&physicalDevice)
+    VkFormat Swapchain::FindDepthFormat(const VkPhysicalDevice& physicalDevice)
     {
         ZoneScoped;
 
@@ -72,7 +72,7 @@ namespace CHIKU
         );
     }
 
-    void Swapchain::CreateDepthResources(const VkPhysicalDevice&physicalDevice)
+    void Swapchain::CreateDepthResources(const VkPhysicalDevice& physicalDevice)
     {
         ZoneScoped;
 
@@ -316,7 +316,8 @@ namespace CHIKU
         uint32_t formatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
-        if (formatCount != 0) {
+        if (formatCount != 0) 
+        {
             details.Formats.resize(formatCount);
             vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.Formats.data());
         }
@@ -324,7 +325,8 @@ namespace CHIKU
         uint32_t presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
-        if (presentModeCount != 0) {
+        if (presentModeCount != 0) 
+        {
             details.PresentModes.resize(presentModeCount);
             vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.PresentModes.data());
         }
