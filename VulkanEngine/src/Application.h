@@ -1,7 +1,7 @@
 #pragma once
-#include "VulkanEngine/VulkanEngine.h"
-#include "VulkanEngine/Window.h"
-#include "VulkanEngine/Assets/ModelAsset.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/Window.h"
+#include "Renderer/Assets/ModelAsset.h"
 
 namespace CHIKU
 {
@@ -16,7 +16,7 @@ namespace CHIKU
 
 	private:
 		Window m_Window;
-		VulkanEngine m_Engine;
+		Renderer m_Renderer;
 		std::shared_ptr<ModelAsset> m_Model;
 	};
 }

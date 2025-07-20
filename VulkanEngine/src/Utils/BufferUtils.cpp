@@ -1,5 +1,5 @@
 #include "BufferUtils.h"
-#include "VulkanEngine/VulkanEngine.h"
+#include "Renderer/Renderer.h"
 #include "Utils/EngineUtility.h"
 #include <iostream>
 
@@ -11,13 +11,13 @@ namespace CHIKU
 		{
             ZoneScoped;
 
-			auto commandBuffer = VulkanEngine::BeginRecordingSingleTimeCommands();
+			auto commandBuffer = Renderer::BeginRecordingSingleTimeCommands();
 			VkBufferCopy copyRegion{};
 			copyRegion.srcOffset = 0; // Optional
 			copyRegion.dstOffset = 0; // Optional
 			copyRegion.size = size;
 			vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-			VulkanEngine::EndRecordingSingleTimeCommands(commandBuffer);
+			Renderer::EndRecordingSingleTimeCommands(commandBuffer);
 		}
 
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
@@ -30,25 +30,25 @@ namespace CHIKU
 			bufferInfo.usage = usage;
 			bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-			if (vkCreateBuffer(VulkanEngine::GetDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+			if (vkCreateBuffer(Renderer::GetDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create buffer!");
 			}
 
 			VkMemoryRequirements memRequirements;
-			vkGetBufferMemoryRequirements(VulkanEngine::GetDevice(), buffer, &memRequirements);
+			vkGetBufferMemoryRequirements(Renderer::GetDevice(), buffer, &memRequirements);
 
 			VkMemoryAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = Utils::FindMemoryType(VulkanEngine::GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
+			allocInfo.memoryTypeIndex = Utils::FindMemoryType(Renderer::GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
-			if (vkAllocateMemory(VulkanEngine::GetDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+			if (vkAllocateMemory(Renderer::GetDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to allocate buffer memory!");
 			}
 
-			vkBindBufferMemory(VulkanEngine::GetDevice(), buffer, bufferMemory, 0);
+			vkBindBufferMemory(Renderer::GetDevice(), buffer, bufferMemory, 0);
 		}
 
         size_t GetAttributeSize(const VertexComponentType& componentType, const VertexAttributeType& type)

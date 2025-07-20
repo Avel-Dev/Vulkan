@@ -1,8 +1,8 @@
 #pragma once
 #include "VulkanHeader.h"
-#include "VulkanEngine/Assets/MaterialAsset.h"
-#include "VulkanEngine/Assets/MeshAsset.h"
-#include "VulkanEngine/Buffer/VertexBuffer.h"
+#include "Renderer/Assets/MaterialAsset.h"
+#include "Renderer/Assets/MeshAsset.h"
+#include "Renderer/Buffer/VertexBuffer.h"
 
 namespace CHIKU
 {

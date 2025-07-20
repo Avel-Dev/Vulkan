@@ -1,6 +1,7 @@
 #include "ShaderAsset.h"
-#include "VulkanEngine/Buffer/UniformBuffer.h"
+#include "Renderer/Buffer/UniformBuffer.h"
 #include "Utils/ShaderUtils.h"
+
 #include <unordered_map>
 #include <fstream>
 #include <json.hpp>
@@ -96,7 +97,7 @@ namespace CHIKU
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(VulkanEngine::GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+        if (vkCreateShaderModule(Renderer::GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create shader module");
         }
@@ -147,7 +148,7 @@ namespace CHIKU
 
         for (auto& module : m_ShaderStage)
         {
-            vkDestroyShaderModule(VulkanEngine::GetDevice(), module.second, nullptr);
+            vkDestroyShaderModule(Renderer::GetDevice(), module.second, nullptr);
         }
         m_ShaderStage.clear();
     }

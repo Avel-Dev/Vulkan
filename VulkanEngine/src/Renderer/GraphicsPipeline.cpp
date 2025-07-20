@@ -153,7 +153,7 @@ namespace CHIKU
 
         VkPipelineLayout pipelineLayout;
 
-        if (vkCreatePipelineLayout(VulkanEngine::GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+        if (vkCreatePipelineLayout(Renderer::GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create pipeline layout!");
         }
@@ -183,14 +183,14 @@ namespace CHIKU
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipelineLayout;
-        pipelineInfo.renderPass = VulkanEngine::GetRenderPass();
+        pipelineInfo.renderPass = Renderer::GetRenderPass();
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.pDepthStencilState = &depthStencil;
 
 		VkPipeline pipeline;
 
-        if (vkCreateGraphicsPipelines(VulkanEngine::GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+        if (vkCreateGraphicsPipelines(Renderer::GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
@@ -213,7 +213,7 @@ namespace CHIKU
 
     void GraphicsPipeline::BindPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset)
     {
-        auto& let = m_GlobalUniformSetStorage[0].BindingStorage[0].UniformBuffersMapped[VulkanEngine::GetCurrentFrame()];
+        auto& let = m_GlobalUniformSetStorage[0].BindingStorage[0].UniformBuffersMapped[Renderer::GetCurrentFrame()];
 
         static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -235,18 +235,18 @@ namespace CHIKU
         memcpy(let, data, size);
         memcpy((uint8_t*)let + size, (uint8_t*)data + size, size * 2);
 
-		materialAsset->UpdateUniformBuffer(VulkanEngine::GetCurrentFrame());
+		materialAsset->UpdateUniformBuffer(Renderer::GetCurrentFrame());
 
         const auto& [pipeline, pipelineLayout] = GraphicsPipeline::GetPipeline(materialAsset, meshAsset);
-		const auto& sets = materialAsset->GetDescriptorSets(VulkanEngine::GetCurrentFrame());
+		const auto& sets = materialAsset->GetDescriptorSets(Renderer::GetCurrentFrame());
 
 		std::vector<VkDescriptorSet> descriptorSets;
 
-        descriptorSets.insert(descriptorSets.end(), m_GlobalDescriptorSetsChache[VulkanEngine::GetCurrentFrame()].begin(), m_GlobalDescriptorSetsChache[VulkanEngine::GetCurrentFrame()].end());
+        descriptorSets.insert(descriptorSets.end(), m_GlobalDescriptorSetsChache[Renderer::GetCurrentFrame()].begin(), m_GlobalDescriptorSetsChache[Renderer::GetCurrentFrame()].end());
         descriptorSets.insert(descriptorSets.end(), sets.begin(), sets.end());
 
         vkCmdBindDescriptorSets(
-            VulkanEngine::GetCommandBuffer(),
+            Renderer::GetCommandBuffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipelineLayout,
             0,
@@ -255,7 +255,7 @@ namespace CHIKU
             0, 
             nullptr);
 
-        vkCmdBindPipeline(VulkanEngine::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdBindPipeline(Renderer::GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }   
 
     void GraphicsPipeline::CleanUp()
@@ -263,14 +263,14 @@ namespace CHIKU
         ZoneScoped;
         for (auto& [key, pipeline] : m_Pipelines)
         {
-            vkDestroyPipeline(VulkanEngine::GetDevice(), pipeline.first, nullptr);
-            vkDestroyPipelineLayout(VulkanEngine::GetDevice(), pipeline.second, nullptr);
+            vkDestroyPipeline(Renderer::GetDevice(), pipeline.first, nullptr);
+            vkDestroyPipelineLayout(Renderer::GetDevice(), pipeline.second, nullptr);
         }
         m_Pipelines.clear();
 
         for (auto& layout : m_GlobalDescriptorSetLayouts)
         {
-            vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), layout, nullptr);
+            vkDestroyDescriptorSetLayout(Renderer::GetDevice(), layout, nullptr);
 		}
 
         for(auto& setStorage : m_GlobalUniformSetStorage)
@@ -279,11 +279,11 @@ namespace CHIKU
             {
                 for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
                 {
-                    vkDestroyBuffer(VulkanEngine::GetDevice(), storage.UniformBuffers[i], nullptr);
-                    vkFreeMemory(VulkanEngine::GetDevice(), storage.UniformBuffersMemory[i], nullptr);
+                    vkDestroyBuffer(Renderer::GetDevice(), storage.UniformBuffers[i], nullptr);
+                    vkFreeMemory(Renderer::GetDevice(), storage.UniformBuffersMemory[i], nullptr);
                 }
             }
-            vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), setStorage.DescriptorSetLayout, nullptr);
+            vkDestroyDescriptorSetLayout(Renderer::GetDevice(), setStorage.DescriptorSetLayout, nullptr);
 		}
 
 	}

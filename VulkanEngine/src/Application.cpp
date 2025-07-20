@@ -1,10 +1,9 @@
 #include "Application.h"
-#include "Renderer/Renderer.h"
 #include "Utils/ShaderUtils.h"
-#include "VulkanEngine/DescriptorPool.h"
-#include "VulkanEngine/GraphicsPipeline.h"
-#include "VulkanEngine/Assets/ModelAsset.h"
-#include "VulkanEngine/Assets/AssetManager.h"
+#include "Renderer/DescriptorPool.h"
+#include "Renderer/GraphicsPipeline.h"
+#include "Renderer/Assets/ModelAsset.h"
+#include "Renderer/Assets/AssetManager.h"
 
 namespace CHIKU
 {
@@ -13,8 +12,7 @@ namespace CHIKU
 		ZoneScoped;    // Profile this block
 
 		m_Window.Init();
-		m_Engine.Init(m_Window.GetWindow());
-		Renderer::Init();
+		m_Renderer.Init(m_Window.GetWindow());
 		AssetManager::Init();
 		DescriptorPool::Init();
 		GraphicsPipeline::Init();
@@ -46,10 +44,9 @@ namespace CHIKU
 		{
 			FrameMark;
 			m_Window.WindowPoolEvent();
-			m_Engine.BeginFrame();
+			m_Renderer.BeginFrame();
 			m_Model->Draw();
-			Renderer::Draw();
-			m_Engine.EndFrame();
+			m_Renderer.EndFrame();
 		}
 	}
 
@@ -57,11 +54,10 @@ namespace CHIKU
 	{
 		ZoneScoped;
 
-		m_Engine.Wait();
-		Renderer::CleanUp();
+		m_Renderer.Wait();
 		DescriptorPool::CleanUp();
 		AssetManager::CleanUp();
 		GraphicsPipeline::CleanUp();
-		m_Engine.CleanUp();
+		m_Renderer.CleanUp();
 	}
 }

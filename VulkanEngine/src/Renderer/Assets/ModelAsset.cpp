@@ -2,7 +2,7 @@
 #include "AssetManager.h"
 #include "Utils/ModelUtils.h"
 #include "Utils/BufferUtils.h"
-#include "VulkanEngine/GraphicsPipeline.h"
+#include "Renderer/GraphicsPipeline.h"
 
 #include <json.hpp>
 #include <fstream>

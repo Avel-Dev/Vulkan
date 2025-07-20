@@ -1,7 +1,7 @@
 #include "ModelUtils.h"
 #include "BufferUtils.h"
-#include "VulkanEngine/Assets/AssetManager.h"
-#include "VulkanEngine/Assets/ShaderAsset.h"
+#include "Renderer/Assets/AssetManager.h"
+#include "Renderer/Assets/ShaderAsset.h"
 #include <fstream>
 #include <iostream>
 #include <json.hpp>

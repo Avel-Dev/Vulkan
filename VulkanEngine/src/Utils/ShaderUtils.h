@@ -1,9 +1,10 @@
 #pragma once
-#include "VulkanEngine/Assets/Asset.h"
-#include "VulkanEngine/Buffer/UniformBuffer.h"
+#include "Renderer/Assets/Asset.h"
+#include "Renderer/Buffer/UniformBuffer.h"
+#include "Renderer/Buffer/VertexBuffer.h"
+
 #include <spirv_reflect.h>
 #include <bitset>
-#include <VulkanEngine/Buffer/VertexBuffer.h>
 
 namespace CHIKU
 {

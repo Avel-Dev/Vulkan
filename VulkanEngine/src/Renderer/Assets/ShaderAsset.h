@@ -1,8 +1,8 @@
 #pragma once
 #include "Asset.h"
-#include "VulkanEngine/VulkanEngine.h"
-#include "VulkanEngine/Buffer/UniformBuffer.h"
-#include "VulkanEngine/Buffer/VertexBuffer.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/Buffer/UniformBuffer.h"
+#include "Renderer/Buffer/VertexBuffer.h"
 
 #define SHADER_STAGE_VERTEX "Vertex"
 #define SHADER_STAGE_TESSELATION "Tesselation"

@@ -2,7 +2,7 @@
 #include "AssetManager.h"
 #include "Utils/ShaderUtils.h"
 #include "Utils/BufferUtils.h"
-#include "VulkanEngine/DescriptorPool.h"    
+#include "Renderer/DescriptorPool.h"    
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -118,7 +118,7 @@ namespace CHIKU
                 {
                     Utils::CreateBuffer(uniformBuffer.Size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, storage.UniformBuffers[i], storage.UniformBuffersMemory[i]);
 
-                    vkMapMemory(VulkanEngine::GetDevice(), storage.UniformBuffersMemory[i], 0, uniformBuffer.Size, 0, &storage.UniformBuffersMapped[i]);
+                    vkMapMemory(Renderer::GetDevice(), storage.UniformBuffersMemory[i], 0, uniformBuffer.Size, 0, &storage.UniformBuffersMapped[i]);
                 }
 
                 setStorage[setIndex].BindingStorage[bindingIndex] = storage;
@@ -158,7 +158,7 @@ namespace CHIKU
             layoutInfo.pBindings = bindings.data();
 
             VkDescriptorSetLayout layout;
-            if (vkCreateDescriptorSetLayout(VulkanEngine::GetDevice(), &layoutInfo, nullptr, &layout) != VK_SUCCESS) {
+            if (vkCreateDescriptorSetLayout(Renderer::GetDevice(), &layoutInfo, nullptr, &layout) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create descriptor set layout!");
             }
 
@@ -182,7 +182,7 @@ namespace CHIKU
             allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
             allocInfo.pSetLayouts = layouts.data();
 
-            if (vkAllocateDescriptorSets(VulkanEngine::GetDevice(), &allocInfo, layout.DescriptorSets.data()) != VK_SUCCESS)
+            if (vkAllocateDescriptorSets(Renderer::GetDevice(), &allocInfo, layout.DescriptorSets.data()) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to allocate descriptor sets!");
             }
@@ -235,7 +235,7 @@ namespace CHIKU
                     descriptorWrites[i] = descriptorWrite;
                 }
 
-                vkUpdateDescriptorSets(VulkanEngine::GetDevice(), MAX_FRAMES_IN_FLIGHT, descriptorWrites, 0, nullptr);
+                vkUpdateDescriptorSets(Renderer::GetDevice(), MAX_FRAMES_IN_FLIGHT, descriptorWrites, 0, nullptr);
             }
         }
     }
@@ -261,7 +261,7 @@ namespace CHIKU
 
         for (auto& [set, storage] : m_UniformSetStorage)
         {
-            vkDestroyDescriptorSetLayout(VulkanEngine::GetDevice(), storage.DescriptorSetLayout, nullptr);
+            vkDestroyDescriptorSetLayout(Renderer::GetDevice(), storage.DescriptorSetLayout, nullptr);
 
             for (auto& [bindingIndex, bindingStorage] : storage.BindingStorage)
             {
@@ -269,12 +269,12 @@ namespace CHIKU
                 {
                     if (bindingStorage.UniformBuffersMapped[i])
                     {
-                        vkUnmapMemory(VulkanEngine::GetDevice(), bindingStorage.UniformBuffersMemory[i]);
+                        vkUnmapMemory(Renderer::GetDevice(), bindingStorage.UniformBuffersMemory[i]);
                         bindingStorage.UniformBuffersMapped[i] = nullptr;
                     }
 
-                    vkDestroyBuffer(VulkanEngine::GetDevice(), bindingStorage.UniformBuffers[i], nullptr);
-                    vkFreeMemory(VulkanEngine::GetDevice(), bindingStorage.UniformBuffersMemory[i], nullptr);
+                    vkDestroyBuffer(Renderer::GetDevice(), bindingStorage.UniformBuffers[i], nullptr);
+                    vkFreeMemory(Renderer::GetDevice(), bindingStorage.UniformBuffersMemory[i], nullptr);
                 }
             }
         }

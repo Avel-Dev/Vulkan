@@ -1,6 +1,6 @@
 #pragma once
-#include "VulkanEngine/Buffer/VertexBuffer.h"
-#include "VulkanEngine/Assets/Asset.h"
+#include "Renderer/Buffer/VertexBuffer.h"
+#include "Renderer/Assets/Asset.h"
 #include <tinygltf/tiny_gltf.h>
 
 namespace CHIKU

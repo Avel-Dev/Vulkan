@@ -1,7 +1,7 @@
 #pragma once
 #include "Asset.h"
-#include "VulkanEngine/Buffer/VertexBuffer.h"
-#include "VulkanEngine/Buffer/IndexBuffer.h"
+#include "Renderer/Buffer/VertexBuffer.h"
+#include "Renderer/Buffer/IndexBuffer.h"
 #include "MeshAsset.h"
 #include "MaterialAsset.h"
 #include <tinygltf/tiny_gltf.h>

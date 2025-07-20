@@ -13,7 +13,7 @@ add_subdirectory("vendor/glfw")
 add_subdirectory("vendor/glm")
 add_subdirectory("vendor/tracy")
 add_subdirectory("vendor/yaml-cpp")
-add_subdirectory("vendor/tinygltf/tinygltf")
+add_subdirectory("vendor/tinyGLTF/tinygltf")
 #add_subdirectory("vendor/tinygltf/tinygltf/examples/build-gltf")
 
 include_directories("vendor/tinygltf")
@@ -30,15 +30,13 @@ include_directories("src/")
 include_directories($ENV{VULKAN_SDK}/include)
 link_directories($ENV{VULKAN_SDK}/lib)
 
-file(GLOB VENDOR_SOURCES "vendor/**/*.cpp" "vendor/**/*.h")
+add_compile_options(/EHsc)
+
 file(GLOB_RECURSE SRC_SOURCES "src/**/*.cpp" "src/*.cpp")
-file(GLOB_RECURSE SRC_HEADERS "src/**/*.h" "src/*.h")
-file(GLOB VENDOR_C_SOURCES "vendor/**/*.c")
 
 add_executable(VulkanEngine
-    ${VENDOR_SOURCES}
     ${SRC_SOURCES}
-    ${SRC_HEADERS}
+    "vendor/spirv_reflect/spirv_reflect.cpp"
     "main.cpp")
 
 message("Source :" ${CMAKE_CURRENT_SOURCE_DIR})

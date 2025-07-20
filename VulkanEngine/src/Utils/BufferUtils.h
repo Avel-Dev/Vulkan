@@ -1,6 +1,6 @@
 #pragma once
 #include "VulkanHeader.h"
-#include "VulkanEngine/Buffer/VertexBuffer.h"
+#include "Renderer/Buffer/VertexBuffer.h"
 
 namespace CHIKU
 {

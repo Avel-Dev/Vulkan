@@ -1,4 +1,5 @@
 #include "DescriptorPool.h"
+#include "Renderer.h"
 
 namespace CHIKU
 {
@@ -20,7 +21,7 @@ namespace CHIKU
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = MAX_DESCRIPTOR_SETS;
 
-        if (vkCreateDescriptorPool(VulkanEngine::GetDevice(), &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
+        if (vkCreateDescriptorPool(Renderer::GetDevice(), &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create descriptor pool!");
         }
@@ -31,7 +32,7 @@ namespace CHIKU
         ZoneScoped;
         if (m_DescriptorPool != VK_NULL_HANDLE)
         {
-            vkDestroyDescriptorPool(VulkanEngine::GetDevice(), m_DescriptorPool, nullptr);
+            vkDestroyDescriptorPool(Renderer::GetDevice(), m_DescriptorPool, nullptr);
             m_DescriptorPool = VK_NULL_HANDLE;
         }
 	}

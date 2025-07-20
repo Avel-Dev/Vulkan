@@ -1,5 +1,5 @@
 #include "VertexBuffer.h"
-#include "VulkanEngine/VulkanEngine.h"
+#include "Renderer/Renderer.h"
 #include "Utils/BufferUtils.h"
 
 namespace CHIKU
@@ -17,9 +17,9 @@ namespace CHIKU
             stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(VulkanEngine::GetDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+        vkMapMemory(Renderer::GetDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, vertices.data(), (size_t)bufferSize);
-        vkUnmapMemory(VulkanEngine::GetDevice(), stagingBufferMemory);
+        vkUnmapMemory(Renderer::GetDevice(), stagingBufferMemory);
 
         Utils::CreateBuffer(bufferSize,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -28,8 +28,8 @@ namespace CHIKU
 
         Utils::CopyBuffer(stagingBuffer, m_VertexBuffer, bufferSize);
 
-        vkDestroyBuffer(VulkanEngine::GetDevice(), stagingBuffer, nullptr);
-        vkFreeMemory(VulkanEngine::GetDevice(), stagingBufferMemory, nullptr);
+        vkDestroyBuffer(Renderer::GetDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(Renderer::GetDevice(), stagingBufferMemory, nullptr);
     }
 
     void VertexBuffer::Bind() const
@@ -38,15 +38,15 @@ namespace CHIKU
 
         VkBuffer vertexBuffers[] = { m_VertexBuffer };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(VulkanEngine::GetCommandBuffer(), 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(Renderer::GetCommandBuffer(), 0, 1, vertexBuffers, offsets);
     }
 
     void VertexBuffer::CleanUp()
     {
         ZoneScoped;
 
-        vkDestroyBuffer(VulkanEngine::GetDevice(), m_VertexBuffer, nullptr);
-        vkFreeMemory(VulkanEngine::GetDevice(), m_VertexBufferMemory, nullptr);
+        vkDestroyBuffer(Renderer::GetDevice(), m_VertexBuffer, nullptr);
+        vkFreeMemory(Renderer::GetDevice(), m_VertexBufferMemory, nullptr);
     }
 
     void VertexBuffer::PrepareBindingDescription()
