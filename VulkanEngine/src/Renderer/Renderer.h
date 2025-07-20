@@ -3,7 +3,6 @@
 #include "Commands.h"
 #include "Window.h"
 #include "VulkanHeader.h"
-#include <optional>
 
 namespace CHIKU
 {

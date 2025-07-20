@@ -1,8 +1,6 @@
 #include "Swapchain.h"
 #include "Utils/EngineUtility.h"
 #include "Utils/ImageUtils.h"
-#include <algorithm>
-#include <array>
 
 namespace CHIKU
 {

@@ -1,4 +1,5 @@
 #pragma once
+#include "EngineHeader.h"
 #include "VulkanHeader.h"
 #include "Asset.h"
 #include <memory.h>
