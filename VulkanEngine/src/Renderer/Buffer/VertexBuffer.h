@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Utils/Utils.h"
-
-#include "VulkanHeader.h"
 #include <glm/glm.hpp>
 #include <bitset>
 
@@ -85,40 +83,25 @@ namespace CHIKU
 	class VertexBuffer
 	{
     public:
-        void CreateVertexBuffer(const std::vector<uint8_t>& vertices);
-        void Bind() const;
-        void CleanUp();
+        virtual void CreateVertexBuffer(const std::vector<uint8_t>& vertices) = 0;
+        virtual void Bind() const = 0;
+        virtual void CleanUp() = 0;
 
         void SetBinding(uint32_t binding) { m_Binding = binding; }
-		void SetMetaData(const VertexBufferMetaData& metaData) 
+		
+        virtual void SetMetaData(const VertexBufferMetaData& metaData) 
         { 
             m_MetaData = metaData; 
-
-            PrepareBindingDescription();
-            PrepareAttributeDescriptions();
         }
 
-        inline VkVertexInputBindingDescription GetBindingDescription() { return m_BindingDescription; }
-        inline std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() { return m_AttributeDescription; }
+        inline virtual uint64_t GetCount() const final { return m_MetaData.Count; }
+		inline virtual VertexBufferMetaData GetMetaData() const final { return m_MetaData; }
 
-		VkVertexInputBindingDescription GetBindingDescription() const { return m_BindingDescription; }
-        std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() const { return m_AttributeDescription; }
-        inline VkBuffer GetBuffer() const { return m_VertexBuffer; }
-        inline VkDeviceMemory GetBufferMemory() const { return m_VertexBufferMemory; }
-        inline uint64_t GetCount() const { return m_MetaData.Count; }
-		inline VertexBufferMetaData GetMetaData() const { return m_MetaData; }
+		static std::shared_ptr<VertexBuffer> Create();
 
-    private:
-        void PrepareBindingDescription();
-        void PrepareAttributeDescriptions();
-
-    private:
+    protected:
         uint32_t m_Binding = 0;
-        VkBuffer m_VertexBuffer;
-        VkDeviceMemory m_VertexBufferMemory;
         VertexBufferMetaData m_MetaData;
-        VkVertexInputBindingDescription m_BindingDescription;
-        std::vector<VkVertexInputAttributeDescription> m_AttributeDescription;
 	};
 }
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "VulkanHeader.h"
 #include "EngineHeader.h"
 
 namespace CHIKU
@@ -7,15 +6,15 @@ namespace CHIKU
 	class IndexBuffer
 	{
     public:
-        void CreateIndexBuffer(const std::vector<uint32_t>& indices);
-        void Bind() const;
+        virtual void CreateIndexBuffer(const std::vector<uint32_t>& indices) = 0;
+        virtual void Bind() const = 0;
+        virtual void CleanUp() = 0;
 
-        uint32_t GetCount() const { return count; }
-        void CleanUp();
+        virtual uint32_t GetCount() const final { return count; }
 
-    private:
+		static std::shared_ptr<IndexBuffer> Create();
+
+    protected:
         uint32_t count;
-        VkBuffer m_IndexBuffer;
-        VkDeviceMemory m_IndexBufferMemory;
 	};
 }

@@ -1,8 +1,10 @@
 #pragma once
-#include "VulkanHeader.h"
-#include "Renderer/Assets/MaterialAsset.h"
-#include "Renderer/Assets/MeshAsset.h"
+#include "Assets/MaterialAsset.h"
+#include "Assets/MeshAsset.h"
 #include "Renderer/Buffer/VertexBuffer.h"
+#ifdef RENDERER_VULKAN
+	#include "Vulkan/Renderer/VulkanGraphicsPipelineData.h"
+#endif
 
 namespace CHIKU
 {
@@ -38,20 +40,28 @@ namespace CHIKU
 	class GraphicsPipeline
 	{
 	public:
+		static std::unique_ptr<GraphicsPipeline> s_Instance;
+
+	public:
 		GraphicsPipeline() = default;
 		
-		static void Init();
-		static void CleanUp();
+		virtual void Init() = 0;
+		virtual void CleanUp() = 0;
 
-		static std::pair<VkPipeline, VkPipelineLayout> CreatePipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const VkVertexInputBindingDescription& bindingDescription,const std::vector<VkVertexInputAttributeDescription>& attributeDescription);
-		static std::pair<VkPipeline, VkPipelineLayout> GetPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset);
+		virtual PipelineData GetPipeline(
+			const std::shared_ptr<MaterialAsset>& materialAsset, 
+			const std::shared_ptr<MeshAsset>& meshAsset) = 0;
+		
+		virtual PipelineData CreatePipeline(
+			const std::shared_ptr<MaterialAsset>& materialAsset, 
+			const std::shared_ptr<MeshAsset>& meshAsset) = 0;
 
-		static void BindPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, const std::shared_ptr<MeshAsset>& meshAsset);
+		virtual void BindPipeline(const std::shared_ptr<MaterialAsset>& materialAsset, 
+			const std::shared_ptr<MeshAsset>& meshAsset) = 0;
+		
+		static std::unique_ptr<GraphicsPipeline> Create();
 
-	private:
-		static std::unordered_map<PipelineKey, std::pair<VkPipeline,VkPipelineLayout>> m_Pipelines;
-		static std::array<UniformSetStorage, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> m_GlobalUniformSetStorage; //Key is the set Index>
-		static std::array<VkDescriptorSetLayout, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> m_GlobalDescriptorSetLayouts; //Key is the set Index>
-		static std::array<std::array<VkDescriptorSet, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT>,MAX_FRAMES_IN_FLIGHT> m_GlobalDescriptorSetsChache;
+	protected:
+		std::array<UniformSetStorage, DEFAULT_DESCRIPTOR_SET_LAYOUT_BINDING_COUNT> m_GlobalUniformSetStorage; //Key is the set Index>
 	};
 }

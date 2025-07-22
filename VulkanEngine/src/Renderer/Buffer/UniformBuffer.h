@@ -1,6 +1,5 @@
 #pragma once
 #include "EngineHeader.h"
-#include "VulkanHeader.h"
 #include <bitset>
 
 namespace CHIKU
@@ -112,22 +111,8 @@ namespace CHIKU
 	using UniformBufferSet = std::map<uint32_t, UniformBuffer>; // Key is the binding number
     using UniformBufferDescription = std::map<uint32_t, UniformBufferSet>; //Key is the set number
 
-    struct TextureData
-    {
-        VkImage TextureImage;
-        VkImageView TextureImageView;
-        VkDeviceMemory TextureImageMemory;
-        VkSampler TextureSampler;
-    };
-
-    struct UniformBufferDescriptorInfo
-    {
-        VkDescriptorSetLayout DescriptorSetLayouts;
-        std::array<VkBuffer, MAX_FRAMES_IN_FLIGHT> UniformBuffers;
-        std::array<VkDeviceMemory, MAX_FRAMES_IN_FLIGHT> UniformBuffersMemory;
-        std::array<void*, MAX_FRAMES_IN_FLIGHT> UniformBuffersMapped;
-        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> DescriptorSets;
-    };
+    struct TextureData;
+    struct UniformBufferDescriptorInfo;
 
     static const char* ToString(UniformPlainDataType type)
     {
